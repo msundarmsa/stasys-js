@@ -1,8 +1,8 @@
 {
-  "name": "electron-forge-template",
-  "productName": "electron-forge-template",
+  "name": "stasys-js",
+  "productName": "stasys-js",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "STASYS",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
@@ -14,7 +14,7 @@
   "keywords": [],
   "author": {
     "name": "Meenatchi Sundaram Muthu Selva Annamalai",
-    "email": "msm518@ic.ac.uk"
+    "email": "mrmmsmsa.2k12@gmail.com"
   },
   "license": "MIT",
   "config": {
@@ -69,6 +69,9 @@
     "@electron-forge/maker-squirrel": "^6.0.0-beta.63",
     "@electron-forge/maker-zip": "^6.0.0-beta.63",
     "@electron-forge/plugin-webpack": "^6.0.0-beta.63",
+    "@types/d3": "^7.1.0",
+    "@types/react": "^17.0.39",
+    "@types/react-dom": "^17.0.11",
     "@typescript-eslint/eslint-plugin": "^5.11.0",
     "@typescript-eslint/parser": "^5.11.0",
     "@vercel/webpack-asset-relocator-loader": "^1.7.0",
@@ -84,7 +87,10 @@
     "typescript": "~4.5.4"
   },
   "dependencies": {
+    "d3": "^7.3.0",
     "electron-squirrel-startup": "^1.0.0",
-    "opencv-bindings": "file:opencv-bindings"
+    "opencv-bindings": "file:opencv-bindings",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
   }
 }
