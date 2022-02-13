@@ -3,25 +3,25 @@ import { Box, Typography } from '@mui/material';
 import Webcam from './components/Webcam';
 import Mic from './components/Mic';
 
-/* declare let electron: {
+declare let electron: {
   ipcRenderer: {
     sendMsg: (msg: string) => void;
     on: (channel_name: string, fn: (msg: string) => void) => void;
     once: (channel_name: string, fn: (msg: string) => void) => void;
   };
-}; */
+};
 
 const SettingsPage = () => {
   const [opencvVersion, setOpencvVersion] = useState('');
 
-  /* electron.ipcRenderer.on('main-render-channel', (msg) => {
+  electron.ipcRenderer.once('main-render-channel', (msg) => {
     console.log(`Received: ${msg}`);
     if (msg.startsWith('opencv-version: ')) {
       const opencv_version = msg.split(' ')[1];
       setOpencvVersion(` (v${opencv_version})`);
     }
   });
-  electron.ipcRenderer.sendMsg('hello main!'); */
+  electron.ipcRenderer.sendMsg('hello main!');
 
   return (
     <div>
