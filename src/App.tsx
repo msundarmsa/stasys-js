@@ -1,8 +1,27 @@
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import { render } from 'react-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { CssBaseline } from '@mui/material';
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
 
-function render() {
-  ReactDOM.render(<h2>Hello from React!</h2>, document.body);
+import SettingsPage from './SettingsPage/SettingsPage';
+
+function App() {
+  const darkTheme = createTheme({
+    palette: {
+      mode: 'dark',
+    }
+  });
+
+  return (
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <SettingsPage />
+    </ThemeProvider>
+  );
 }
 
-render();
+render(<App />, document.getElementById('root'));
