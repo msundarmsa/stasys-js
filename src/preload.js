@@ -3,7 +3,24 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {
     sendMsg(arg) {
-      ipcRenderer.send('main-render-channel', arg);
+      ipcRenderer.send('main-render-channel', 'MSG', arg);
+    },
+    startCamera(index) {
+      ipcRenderer.send('main-render-channel', 'START_CAMERA', index);
+    },
+    stopCamera() {
+      ipcRenderer.send('main-render-channel', 'STOP_CAMERA');
+    },
+    getOpenCVVersion(func) {
+      ipcRenderer.send('main-render-channel', 'GET_OPENCV_VERSION');
+      const handleReply = (event, ...args) => {
+        if (args[0] == "OPENCV_VERSION") {
+          func(args[1]);
+          ipcRenderer.removeListener('main-render-channel', handleReply);
+        }
+      };
+
+      ipcRenderer.on('main-render-channel', handleReply);
     },
     on(channel, func) {
       // on => listen on channel continuously

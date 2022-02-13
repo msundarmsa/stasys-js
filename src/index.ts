@@ -9,11 +9,14 @@ declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 // listen on channel for messages from render process
-ipcMain.once('main-render-channel', async (event, arg) => {
-  console.log(`Render process: ${arg}`);
+ipcMain.on('main-render-channel', async (event, ...args) => {
+  console.log(`Render process: ${args}`);
+  const cmd = args[0];
 
-  // reply to render process with opencv version
-  event.reply('main-render-channel', `opencv-version: ${cv.version.major}.${cv.version.minor}.${cv.version.revision}`);
+  if (cmd == 'GET_OPENCV_VERSION') {
+    // reply to render process with opencv version
+    event.reply('main-render-channel', 'OPENCV_VERSION', `${cv.version.major}.${cv.version.minor}.${cv.version.revision}`);
+  }
 });
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -29,6 +32,8 @@ const createWindow = (): void => {
     width: 1280,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+      nodeIntegrationInWorker: true,
+      devTools: true,
     }
   });
 

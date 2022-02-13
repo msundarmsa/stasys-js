@@ -1,32 +1,17 @@
-import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import Webcam from './components/Webcam';
 import Mic from './components/Mic';
+import electron from '../ipc';
 
-declare let electron: {
-  ipcRenderer: {
-    sendMsg: (msg: string) => void;
-    on: (channel_name: string, fn: (msg: string) => void) => void;
-    once: (channel_name: string, fn: (msg: string) => void) => void;
-  };
-};
+electron.ipcRenderer.getOpenCVVersion((version) => {
+    console.log(`(SettingsPage) OpenCV Version: ${version}`);
+});
 
 const SettingsPage = () => {
-  const [opencvVersion, setOpencvVersion] = useState('');
-
-  electron.ipcRenderer.once('main-render-channel', (msg) => {
-    console.log(`Received: ${msg}`);
-    if (msg.startsWith('opencv-version: ')) {
-      const opencv_version = msg.split(' ')[1];
-      setOpencvVersion(` (v${opencv_version})`);
-    }
-  });
-  electron.ipcRenderer.sendMsg('hello main!');
-
   return (
     <div>
       <Typography textAlign="center" variant="h3">
-        Settings{opencvVersion}
+        Settings
       </Typography>
       <Box
         sx={{

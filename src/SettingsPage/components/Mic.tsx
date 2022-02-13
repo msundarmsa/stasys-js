@@ -190,7 +190,6 @@ const Mic = () => {
           Threshold
         </Typography>
         <Slider
-          aria-label="Threshold"
           value={refLevel}
           step={0.001}
           min={0}

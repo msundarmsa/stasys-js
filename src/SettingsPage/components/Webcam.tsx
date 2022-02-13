@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/media-has-caption */
 import {
   Box,
   Button,
@@ -11,10 +10,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useState, useRef, useEffect } from 'react';
+// eslint-disable-next-line import/no-unresolved
+import Worker from "worker-loader!./Worker";
 
 const Webcam = () => {
-  const [devices, setDevices] = useState<MediaDeviceInfo[] | []>([]);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   // menu
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -26,6 +27,7 @@ const Webcam = () => {
   const [threshs, setThreshs] = useState([120, 150]);
   const [showCircle, setShowCircle] = useState(false);
   const [showThreshs, setShowThreshs] = useState(false);
+  const [cameraWorker, setCameraWorker] = useState<Worker | null>(null);
 
   const closeWebcams = () => {
     setAnchorEl(null);
@@ -41,9 +43,11 @@ const Webcam = () => {
   }, []);
 
   const stopWebcam = () => {
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
+    // send stop signal to main process
+    if (cameraWorker != null) {
+      cameraWorker.postMessage({ cmd: 'STOP_CAMERA' });
     }
+    setCameraWorker(null);
     setWebcamStarted(false);
     setDeviceLabel('');
   };
@@ -57,18 +61,37 @@ const Webcam = () => {
     setDeviceLabel(device.label);
     closeWebcams();
 
-    const constraints = {
+    // mock create stream to get permission
+    const stream = await navigator.mediaDevices.getUserMedia({
       audio: false,
       video: {
-        deviceId: device.deviceId,
-      },
-    };
+        deviceId: device.deviceId
+      }
+    });
 
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream;
-      videoRef.current.play();
+    // send start signal to main process
+    const deviceIndex = devices.indexOf(device);
+    const myCameraWorker = new Worker();
+    myCameraWorker.postMessage({ cmd: 'START_CAMERA', cameraId: deviceIndex });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    myCameraWorker.onmessage = event => {
+      if (event.data.cmd == 'STOPPED_CAMERA') {
+        myCameraWorker.terminate();
+      } else if (event.data.cmd == 'GRABBED_FRAME') {
+        if (canvasRef.current) {
+          // set canvas dimensions
+          canvasRef.current.height = event.data.height;
+          canvasRef.current.width = event.data.width;
+
+          // set image data
+          const ctx = canvasRef.current.getContext('2d');
+          if (ctx) {
+            ctx.putImageData(event.data.frame, 0, 0);
+          }
+        }
+      }
     }
+    setCameraWorker(myCameraWorker);
   }
 
   return (
@@ -132,8 +155,8 @@ const Webcam = () => {
           justifyContent: 'center',
         }}
       >
-        <video
-          ref={videoRef}
+        <canvas
+          ref={canvasRef}
           style={{
             width: '100%',
             aspectRatio: '1280/720',
@@ -145,7 +168,6 @@ const Webcam = () => {
           Thresholds
         </Typography>
         <Slider
-          aria-label="Threshold"
           value={threshs}
           min={0}
           max={255}
