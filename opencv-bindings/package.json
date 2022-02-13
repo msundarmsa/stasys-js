@@ -1,0 +1,19 @@
+{
+  "name": "opencv-bindings",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+	  "electron-rebuild": "electron-rebuild --arch arm64"
+  },
+  "typings": "./typings/index.d.ts",
+  "devDependencies": {
+    "electron-rebuild": "^3.2.7",
+    "bindings": "^1.5.0",
+    "nan": "^2.15.0",
+    "native-node-utils": "^0.2.7"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
