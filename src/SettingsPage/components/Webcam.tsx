@@ -72,6 +72,9 @@ const Webcam = () => {
     // send start signal to main process
     const deviceIndex = devices.indexOf(device);
     const myCameraWorker = new Worker();
+    myCameraWorker.postMessage({ cmd: 'SET_THRESHS', threshs: threshs});
+    myCameraWorker.postMessage({ cmd: 'SET_SHOW_THRESH', showThreshs: showThreshs});
+    myCameraWorker.postMessage({ cmd: 'SET_SHOW_CIRCLE', showCircle: showCircle});
     myCameraWorker.postMessage({ cmd: 'START_CAMERA', cameraId: deviceIndex });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     myCameraWorker.onmessage = event => {
@@ -92,6 +95,27 @@ const Webcam = () => {
       }
     }
     setCameraWorker(myCameraWorker);
+  }
+
+  const threshsChanged = (newThreshs: number[]) => {
+    if (cameraWorker) {
+      cameraWorker.postMessage({ cmd: 'SET_THRESHS', threshs: newThreshs });
+    }
+    setThreshs(newThreshs);
+  }
+
+  const showThreshsChanged = (show: boolean) => {
+    if (cameraWorker) {
+      cameraWorker.postMessage({ cmd: 'SET_SHOW_THRESHS', showThreshs: show });
+    }
+    setShowThreshs(show);
+  }
+
+  const showCircleChanged = (show: boolean) => {
+    if (cameraWorker) {
+      cameraWorker.postMessage({ cmd: 'SET_SHOW_CIRCLE', showCircle: show });
+    }
+    setShowCircle(show);
   }
 
   return (
@@ -172,7 +196,7 @@ const Webcam = () => {
           min={0}
           max={255}
           // @ts-expect-error: expect error here due to possibility that newLevel be an array
-          onChange={(_1, newThreshs, _2) => setThreshs(newThreshs)}
+          onChange={(_1, newThreshs, _2) => threshsChanged(newThreshs)}
         />
       </Stack>
       <Box
@@ -189,7 +213,7 @@ const Webcam = () => {
             <Checkbox
               aria-label="showThresholds"
               checked={showThreshs}
-              onChange={(_1, checked) => setShowThreshs(checked)}
+              onChange={(_1, checked) => showThreshsChanged(checked)}
             />
           }
           label="Show thresholds"
@@ -199,7 +223,7 @@ const Webcam = () => {
             <Checkbox
               aria-label="showCircle"
               checked={showCircle}
-              onChange={(_1, checked) => setShowCircle(checked)}
+              onChange={(_1, checked) => showCircleChanged(checked)}
             />
           }
           label="Show detected circle"
