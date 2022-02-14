@@ -34,14 +34,21 @@ const createWindow = (): void => {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       nodeIntegrationInWorker: true,
       devTools: true,
-    }
+    },
+    show: false
   });
+
+  // make full screen
+  mainWindow.maximize();
 
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
+
+  // show window
+  mainWindow.show();
 };
 
 // This method will be called when Electron has finished

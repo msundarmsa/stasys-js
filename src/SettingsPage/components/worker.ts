@@ -1,12 +1,10 @@
 const ctx: Worker = self as any;
 
-import { blob } from 'd3';
 import * as cv from 'opencv-bindings';
 import { THRESH_TOZERO_INV } from 'opencv-bindings';
 console.log('OpenCV Version: ' + cv.version.major + '.' + cv.version.minor + '.' + cv.version.revision);
 
 let video: cv.VideoCapture | null = null;
-let interval: NodeJS.Timer | null = null;
 let threshs: number[] | null = null;
 let showThreshs = false;
 let showCircle = false;
@@ -23,63 +21,70 @@ ctx.onmessage = event => {
         // video = new cv.VideoCapture(event.data.cameraId);
         const fps = 30;
         const intervalMs = 1000 / fps;
-        interval = setInterval(() => {
-            if (!video) {
-                // video possible closed
-                return;
-            }
 
-            // grab frame
-            let frame = video.read();
+        (function loop(){
+            setTimeout(function() {
+                // Your logic here
+                if (!video) {
+                    // video closed
+                    return;
+                }
 
-            let grayFrame: cv.Mat;
-            if (frame.channels == 3) {
-                grayFrame = frame.cvtColor(cv.COLOR_BGR2GRAY);
-            } else {
-                grayFrame = frame;
-                frame = grayFrame.cvtColor(cv.COLOR_GRAY2BGR);
-            }
+                // grab frame
+                let frame = video.read();
 
-            if (showThreshs && threshs) {
-                let threshImg = grayFrame.threshold(threshs[0], 255, cv.THRESH_TOZERO);
-                threshImg = threshImg.threshold(threshs[1], 255, THRESH_TOZERO_INV);
+                let grayFrame: cv.Mat;
+                if (frame.channels == 3) {
+                    grayFrame = frame.cvtColor(cv.COLOR_BGR2GRAY);
+                } else {
+                    grayFrame = frame;
+                    frame = grayFrame.cvtColor(cv.COLOR_GRAY2BGR);
+                }
 
-                frame = threshImg;
-            }
+                if (showThreshs && threshs) {
+                    let threshImg = grayFrame.threshold(threshs[0], 255,
+                        cv.THRESH_TOZERO);
+                    threshImg = threshImg.threshold(threshs[1], 255,
+                        THRESH_TOZERO_INV);
 
-            if (frame.channels == 1) {
-                frame = frame.cvtColor(cv.COLOR_GRAY2BGR);
-            }
+                    frame = threshImg;
+                }
 
-            if (showCircle && detector) {
-                grayFrame = cv.gaussianBlur(grayFrame, new cv.Size(9, 9), 0);
-                const keypoints = detector.detect(grayFrame);
+                if (frame.channels == 1) {
+                    frame = frame.cvtColor(cv.COLOR_GRAY2BGR);
+                }
 
-                keypoints.forEach((kp) => {
-                    frame.drawCircle(kp.pt, kp.size / 2, new cv.Vec3(0, 0, 255), cv.FILLED);
-                });
-            }
+                if (showCircle && detector) {
+                    grayFrame = cv.gaussianBlur(grayFrame, new cv.Size(9, 9), 0);
+                    const keypoints = detector.detect(grayFrame);
 
-            // convert to image data
-            const matRGBA = frame.channels === 1
-                ? frame.cvtColor(cv.COLOR_GRAY2RGBA)
-                : frame.cvtColor(cv.COLOR_BGR2RGBA);
+                    keypoints.forEach((kp) => {
+                        frame.drawCircle(kp.pt, kp.size / 2,
+                            new cv.Vec3(0, 0, 255), cv.FILLED);
+                    });
+                }
 
-            // create new ImageData from raw mat data
-            const imgData = new ImageData(
-                new Uint8ClampedArray(matRGBA.getData()),
-                    frame.cols,
-                    frame.rows
-                );
+                // convert to image data
+                const matRGBA = frame.channels === 1
+                    ? frame.cvtColor(cv.COLOR_GRAY2RGBA)
+                    : frame.cvtColor(cv.COLOR_BGR2RGBA);
 
-            // send image data to main process
-            ctx.postMessage({ 'cmd': 'GRABBED_FRAME', 'frame': imgData, 'height': frame.rows, 'width': frame.cols });
-        }, intervalMs);
+                // create new ImageData from raw mat data
+                const imgData = new ImageData(
+                    new Uint8ClampedArray(matRGBA.getData()),
+                        frame.cols,
+                        frame.rows
+                    );
+
+                // send image data to main process
+                ctx.postMessage({ 'cmd': 'GRABBED_FRAME', 'frame': imgData, 
+                'height': frame.rows, 'width': frame.cols });
+
+                // recurse
+                loop();
+           }, intervalMs);
+        })();
     } else if (event.data.cmd == 'STOP_CAMERA') {
-        if (interval) {
-            clearInterval(interval);
-        }
-
         if (video) {
             video.release();
             video = null;

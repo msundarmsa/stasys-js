@@ -62,7 +62,7 @@ const Webcam = () => {
     closeWebcams();
 
     // mock create stream to get permission
-    const stream = await navigator.mediaDevices.getUserMedia({
+    await navigator.mediaDevices.getUserMedia({
       audio: false,
       video: {
         deviceId: device.deviceId

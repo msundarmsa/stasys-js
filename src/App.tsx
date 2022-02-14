@@ -7,7 +7,7 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
-import SettingsPage from './SettingsPage/SettingsPage';
+import MainPage from './MainPage/MainPage';
 
 function App() {
   const darkTheme = createTheme({
@@ -19,7 +19,7 @@ function App() {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
-      <SettingsPage />
+      <MainPage />
     </ThemeProvider>
   );
 }
