@@ -1,7 +1,7 @@
 import { axisLeft, axisBottom, scaleLinear, select, line as d3Line } from 'd3';
 import { useEffect, useState, useRef } from 'react';
 
-const LineChart = ({ data, refLevel }: IProps) => {
+const LineChart = ({ data, refLevel, xMin, xMax, yMin, yMax, xAxisLoc, yAxisLabel }: IProps) => {
   const [firstRender, setFirstRender] = useState(true);
   const svgElem = useRef<SVGSVGElement>(null);
 
@@ -12,7 +12,13 @@ const LineChart = ({ data, refLevel }: IProps) => {
 
     // init x and y range
     let minX = 0;
+    if (xMin) {
+      minX = xMin;
+    }
     let maxX = 5;
+    if (xMax) {
+      maxX = xMax;
+    }
     if (data.length > 0) {
       const newMinX = data[0].x;
       const newMaxX = data[data.length - 1].x;
@@ -22,8 +28,14 @@ const LineChart = ({ data, refLevel }: IProps) => {
         maxX = newMaxX;
       }
     }
-    const minY = 0;
-    const maxY = 1;
+    let minY = 0;
+    if (yMin) {
+      minY = yMin;
+    }
+    let maxY = 1;
+    if (yMax) {
+      maxY = yMax;
+    }
 
     // get element height and width
     const height = svgElem.current.clientHeight;
@@ -62,6 +74,10 @@ const LineChart = ({ data, refLevel }: IProps) => {
     const xAxis = axisBottom(xScale).ticks(5);
 
     // y-axis label
+    let yAxisLabelStr = 'Volume';
+    if (yAxisLabel) {
+      yAxisLabelStr = yAxisLabel;
+    }
     select('#y-axis-label').remove();
     select('.line-chart')
       .append('g')
@@ -71,14 +87,21 @@ const LineChart = ({ data, refLevel }: IProps) => {
       .attr('text-anchor', 'middle')
       .attr('transform', 'rotate(-90)')
       .style('fill', 'white')
-      .text('Volume');
+      .text(yAxisLabelStr);
 
     // draw axes
-    select('.line-chart-xaxis')
-      .attr('transform', `translate(0, ${height - MARGINS.bottom})`)
-      // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
-      .call(xAxis);
-    select('.line-chart-yaxis')
+    if (xAxisLoc && xAxisLoc == 'middle') {
+      select('.line-chart-xaxis')
+        .attr('transform', `translate(0, ${height / 2})`)
+        // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
+        .call(xAxis);
+    } else {
+      select('.line-chart-xaxis')
+        .attr('transform', `translate(0, ${height - MARGINS.bottom})`)
+        // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
+        .call(xAxis);
+    }
+   select('.line-chart-yaxis')
       .attr('transform', `translate(${MARGINS.left}, 0)`)
       // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
       .call(yAxis);
@@ -98,18 +121,20 @@ const LineChart = ({ data, refLevel }: IProps) => {
       .attr('stroke-width', 1.5);
 
     // draw ref line
-    const refLine = d3Line()
-      // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
-      .x((point) => xScale(point.x))
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      .y((_) => yScale(refLevel));
+    if (refLevel) {
+      const refLine = d3Line()
+        // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
+        .x((point) => xScale(point.x))
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        .y((_) => yScale(refLevel));
 
-    select('.line-chart-ref-line')
-      // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
-      .attr('d', refLine(data))
-      .attr('fill', 'none')
-      .attr('stroke', '#755f89')
-      .attr('stroke-width', 1.5);
+      select('.line-chart-ref-line')
+        // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
+        .attr('d', refLine(data))
+        .attr('fill', 'none')
+        .attr('stroke', '#755f89')
+        .attr('stroke-width', 1.5);
+    }
   }, [firstRender, data, refLevel, svgElem]);
 
   return (
@@ -124,7 +149,13 @@ const LineChart = ({ data, refLevel }: IProps) => {
 
 interface IProps {
   data: { x: number; y: number }[];
-  refLevel: number;
+  refLevel?: number;
+  xMin?: number;
+  xMax?: number;
+  yMin?: number;
+  yMax?: number;
+  xAxisLoc?: string;
+  yAxisLabel?: string;
 }
 
 export default LineChart;

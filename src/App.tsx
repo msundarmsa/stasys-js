@@ -7,7 +7,7 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
-import MainPage from './MainPage/MainPage';
+import MainPage from './Pages/MainPage';
 
 function App() {
   const darkTheme = createTheme({
