@@ -1,9 +1,7 @@
 import { TableContainer, Paper, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material";
 import { Shot, toDP } from "../../ShotUtils";
 
-const shots: Shot[] = [];
-
-const ShotTable = () => (
+const ShotTable = ( { shots }: {shots: Shot[]}) => (
     <TableContainer component={Paper} style={{ maxHeight: '100%' }}>
       <Table stickyHeader sx={{ minWidth: 650 }} aria-label="simple table">
         <TableHead>
@@ -27,7 +25,7 @@ const ShotTable = () => (
                 </TableCell>
                 <TableCell align="center">{toDP(shot.score, 1)}</TableCell>
                 <TableCell align="center">
-                    <img src={`/assets/images/arrow_${shot.angleStr}.svg`} width='40' height='40' />
+                    <img src={`/assets/images/arrow_${shot.direction}.svg`} width='40' height='40' />
                 </TableCell>
                 <TableCell align="center">{toDP(shot.stab, 0)}%</TableCell>
                 <TableCell align="center">{toDP(shot.desc, 1)}s</TableCell>

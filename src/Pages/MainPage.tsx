@@ -11,8 +11,7 @@ import ScoreStatCard from './components/ScoreStatCard';
 import { Target, ZoomedTarget } from './components/Target';
 import ShotTable from './components/ShotTable';
 import LineChart from './components/LineChart';
-
-const onetoten = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+import { genRandomShots, Shot } from '../ShotUtils';
 
 export default function MainPage() {
     // settings modal
@@ -20,10 +19,10 @@ export default function MainPage() {
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
     
-    // score stats
-    const [stab, setStab] = useState(0);
-    const [desc, setDesc] = useState(0);
-    const [aim, setAim] = useState(0);
+    const [shots, setShots] = useState<Shot[]>([]);
+    const [shotGroups, setShotGroups] = useState<Shot[][]>([]);
+    const [allShots, setAllShots] = useState<Shot[]>([]);
+    const [shot, setShot] = useState<Shot>();
 
     const style = {
         position: 'absolute',
@@ -37,6 +36,33 @@ export default function MainPage() {
         p: 4,
     };
 
+    const handleTest = () => {
+        const allTestShots = genRandomShots(8);
+        const testShotGroups: Shot[][] = [];
+        let currIdx = 0;
+        while (currIdx + 10 < allTestShots.length) {
+            const shotGroup: Shot[] = [];
+            for (let i = currIdx; i < currIdx + 10; i++) {
+                shotGroup.push(allTestShots[i]);
+            }
+            testShotGroups.push(shotGroup.reverse());
+            currIdx += 10;
+        }
+
+        const testShots: Shot[] = [];
+        for (let i = currIdx; i < allTestShots.length - 1; i++) {
+            testShots.push(allTestShots[i]);
+        }
+
+        // add test shots to shot group as well to check zoomed
+        testShotGroups.push(testShots);
+
+        setShot(allTestShots[allTestShots.length - 1]);
+        setShots(testShots.reverse());
+        setShotGroups(testShotGroups.reverse());
+        setAllShots(allTestShots.reverse());
+    };
+
     return (
         <div style={{ display: 'flex', flexFlow: 'column', height: '100%', maxHeight: '100%', overflow: 'hidden' }}>
             <AppBar position="static">
@@ -45,6 +71,7 @@ export default function MainPage() {
                     <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
                         STASYS
                     </Typography>
+                    <Button color="secondary" onClick={handleTest}>TEST</Button>
                     <IconButton 
                         size="large"
                         edge="start"
@@ -69,26 +96,26 @@ export default function MainPage() {
             <div style={{ flex: '1 1 auto', display: 'flex', gap: '10px', margin: '10px', overflow: 'hidden' }}>
                 <div style={{ flex: '40%', display: 'flex', flexDirection: 'column', gap: 10}}>
                     <div style={{ flex: '80%', border: '1px solid #D7EC58', borderRadius: '25px'}}>
-                        <Target />
+                        <Target shots={shots} shot={shot} />
                     </div>
                     <div style={{ flex: '20%', display: 'flex'}}>
-                        <ScoreStatCard scoreStatType='STABLITITY' scoreStat={stab} dp={0} suffix='%' />
-                        <ScoreStatCard scoreStatType='DESC' scoreStat={desc} dp={1} suffix='s' />
-                        <ScoreStatCard scoreStatType='AIM' scoreStat={aim} dp={1} suffix='s' />
+                        <ScoreStatCard scoreStatType='STABLITITY' scoreStat={shot ? shot.stab : 0} dp={0} suffix='%' />
+                        <ScoreStatCard scoreStatType='DESC' scoreStat={shot ? shot.desc : 0} dp={1} suffix='s' />
+                        <ScoreStatCard scoreStatType='AIM' scoreStat={shot ? shot.aim : 0} dp={1} suffix='s' />
                     </div>
                 </div>
                 <div style={{ flex: '20%', border: '1px solid #D7EC58', borderRadius: '25px', overflow: 'auto' }}> 
                     <List>
-                        {onetoten.map((val, id) => (
+                        {shotGroups.map((shotGroup, id) => (
                             <ListItem>
-                                <ZoomedTarget />
+                                <ZoomedTarget shots={shotGroup} />
                             </ListItem>
                         ))}
                     </List>
                 </div>
                 <div style={{ flex: '40%', display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <div style={{ flex: '60%', border: '1px solid #D7EC58', borderRadius: '25px', overflow: 'hidden' }}>
-                        <ShotTable />
+                        <ShotTable shots={allShots} />
                     </div>
                     <div style={{ flex: '40%', border: '1px solid #D7EC58', borderRadius: '25px'}}>
                         <LineChart data={[]} xMin={-0.5} xMax={0.5} yMin={-40} yMax={40} yAxisLabel='displacement (mm)' xAxisLoc='middle' />
