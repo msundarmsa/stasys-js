@@ -11,7 +11,7 @@ import ScoreStatCard from './components/ScoreStatCard';
 import { Target, ZoomedTarget } from './components/Target';
 import ShotTable from './components/ShotTable';
 import LineChart from './components/LineChart';
-import { genRandomShots, Shot } from '../ShotUtils';
+import { genRandomShots, Shot, TARGET_SIZE } from '../ShotUtils';
 
 export default function MainPage() {
     // settings modal
@@ -23,6 +23,8 @@ export default function MainPage() {
     const [shotGroups, setShotGroups] = useState<Shot[][]>([]);
     const [allShots, setAllShots] = useState<Shot[]>([]);
     const [shot, setShot] = useState<Shot>();
+    const [beforeTrace, setBeforeTrace] = useState<[number, number]>();
+    const [afterTrace, setAfterTrace] = useState<[number, number]>();
 
     const style = {
         position: 'absolute',
@@ -96,7 +98,7 @@ export default function MainPage() {
             <div style={{ flex: '1 1 auto', display: 'flex', gap: '10px', margin: '10px', overflow: 'hidden' }}>
                 <div style={{ flex: '40%', display: 'flex', flexDirection: 'column', gap: 10}}>
                     <div style={{ flex: '80%', border: '1px solid #D7EC58', borderRadius: '25px'}}>
-                        <Target shots={shots} shot={shot} />
+                        <Target shots={shots} shot={shot} newBefore={beforeTrace} newAfter={afterTrace}/>
                     </div>
                     <div style={{ flex: '20%', display: 'flex'}}>
                         <ScoreStatCard scoreStatType='STABLITITY' scoreStat={shot ? shot.stab : 0} dp={0} suffix='%' />

@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { PELLET_SIZE, SEVEN_RING_SIZE, Shot, TARGET_SIZE } from "../../ShotUtils";
 
 const circles = [
@@ -49,28 +50,102 @@ const circleNumbers = [
     { text: "8", x: 269/680, y:   1/2  , color: "#464646" }
 ]
 
-export const Target = ( {shots, shot}: {shots: Shot[], shot: Shot | undefined} ) => {
-    const translateShotX = (shot: Shot): number => {
-        return (shot.x + TARGET_SIZE / 2) / TARGET_SIZE * 100;
+export const Target = ( {shots, shot, newBefore, newAfter}: {shots: Shot[], shot: Shot | undefined, newBefore: [number, number] | undefined, newAfter: [number, number] | undefined} ) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [prevBefore, setPrevBefore] = useState<[number, number]>();
+    const [prevAfter, setPrevAfter] = useState<[number, number]>();
+
+    const translateX = (x: number): number => {
+        return (x + TARGET_SIZE / 2) / TARGET_SIZE * 100;
     };
-    const translateShotY = (shot: Shot): number => {
-        return (TARGET_SIZE / 2 - shot.y) / TARGET_SIZE * 100;
+    const translateY = (y: number): number => {
+        return (TARGET_SIZE / 2 - y) / TARGET_SIZE * 100;
     };
 
+    const translateAndScaleTracePoint = (point: [number, number], canvas: HTMLCanvasElement): [number, number] => {
+        const newX = (translateX(point[0]) / 100) * canvas.width;
+        const newY = (translateY(point[1]) / 100) * canvas.height;
+
+        return [newX, newY]
+    }
+
+    const fixDPI = (canvas: HTMLCanvasElement) => {
+        const dpi = window.devicePixelRatio;
+        const newHeight = parseInt(getComputedStyle(canvas).getPropertyValue('height')) * dpi;
+        const newWidth = parseInt(getComputedStyle(canvas).getPropertyValue('width')) * dpi;
+        canvas.setAttribute('height', newHeight.toString());
+        canvas.setAttribute('width', newWidth.toString());
+    }
+
+    const updateTrace = (before: boolean) => {
+        let newTrace = before ? newBefore : newAfter;
+        const prevTrace = before ? prevBefore : prevAfter;
+        if (!newTrace || !canvasRef.current) {
+            return;
+        }
+
+        newTrace = translateAndScaleTracePoint(newTrace, canvasRef.current);
+
+        if (!prevTrace) {
+            if (before) {
+                setPrevBefore(newTrace);
+            } else {
+                setPrevAfter(newTrace);
+            }
+            return;
+        }
+
+        const ctx = canvasRef.current.getContext("2d");
+        if (!ctx) {
+            return;
+        }
+
+        ctx.strokeStyle = before ? "#10e2e6" : "#DF2935";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(prevTrace[0], prevTrace[1]);
+        ctx.lineTo(newTrace[0], newTrace[1]);
+        ctx.stroke();
+        ctx.closePath();
+
+        if (before) {
+            setPrevBefore(newTrace);
+        } else {
+            setPrevAfter(newTrace);
+        }
+    }
+
+    useEffect(() => {
+        if (canvasRef.current) {
+            fixDPI(canvasRef.current);
+        }
+    }, []);
+
+    useEffect(() => {
+        updateTrace(true);
+    }, [newBefore]);
+
+    useEffect(() => {
+        updateTrace(false);
+    }, [newAfter]);
+
     return (
-        <svg style={{ height: '100%', width: '100%', aspectRatio: '1/1' }}>
-            {circles.map((circle, _) => {     
-                return (<circle cx="50%" cy="50%" r={`${circle.radius * 100}%`} fill={circle.fill} stroke={circle.border} />) 
-            })}
-            {circleNumbers.map((circleNum, _) => {     
-                return (<text x={`${circleNum.x * 100}%`} y={`${circleNum.y * 100}%`} fill={circleNum.color} dominantBaseline="middle" textAnchor="middle">{circleNum.text}</text>) 
-            })}
-            {shots.map((shot, _) => {
-                return (<circle cx={`${translateShotX(shot)}%`} cy={`${translateShotY(shot)}%`} fill="#000000" r={`${PELLET_SIZE / TARGET_SIZE * 100}%`} stroke="#ffffff" strokeWidth={3}/>)
-            })}
-            { shot ? <circle cx={`${translateShotX(shot)}%`} cy={`${translateShotY(shot)}%`} fill="#ff1493" r={`${PELLET_SIZE / TARGET_SIZE * 100}%`} stroke="#ffffff" strokeWidth={3}/>
-                   : null }
-        </svg>
+        <div style={{ position: 'relative', height: '100%' }} >
+            <svg style={{ height: '100%', width: '100%', aspectRatio: '1/1' }}>
+                {circles.map((circle, _) => {     
+                    return (<circle cx="50%" cy="50%" r={`${circle.radius * 100}%`} fill={circle.fill} stroke={circle.border} />) 
+                })}
+                {circleNumbers.map((circleNum, _) => {     
+                    return (<text x={`${circleNum.x * 100}%`} y={`${circleNum.y * 100}%`} fill={circleNum.color} dominantBaseline="middle" textAnchor="middle">{circleNum.text}</text>) 
+                })}
+                {shots.map((shot, _) => {
+                    return (<circle cx={`${translateX(shot.x)}%`} cy={`${translateY(shot.y)}%`} fill="#000000" r={`${PELLET_SIZE / TARGET_SIZE * 100}%`} stroke="#ffffff" strokeWidth={3}/>)
+                })}
+                { shot ? <circle cx={`${translateX(shot.x)}%`} cy={`${translateY(shot.y)}%`} fill="#ff1493" r={`${PELLET_SIZE / TARGET_SIZE * 100}%`} stroke="#ffffff" strokeWidth={3}/>
+                    : null }
+            </svg>
+            <canvas ref={canvasRef} style={{ left: 0, top: 0, zIndex: 2, position: 'absolute', height: '100%', width: '100%' }}></canvas>
+        </div>
     );
 };
 
