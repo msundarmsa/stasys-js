@@ -44,7 +44,6 @@ const Mic = () => {
   }, []);
 
   const stopMic = () => {
-    // TODO: stop mic stream and clear graph
     if (audioInterval) {
       clearInterval(audioInterval);
       setAudioInterval(undefined);
@@ -60,7 +59,6 @@ const Mic = () => {
   };
 
   async function selectMic(device: MediaDeviceInfo) {
-    // TODO: start mic stream and show graph
     if (audioInterval) {
       stopMic();
     }
@@ -183,7 +181,7 @@ const Mic = () => {
           justifyContent: "center",
         }}
       >
-        <LineChart data={data} refLevel={refLevel} />
+        <LineChart data={data} refLevel={refLevel} name="micplot" />
       </Box>
       <Stack spacing={2} direction="row" sx={{ mb: 1 }} alignItems="center">
         <Typography textAlign="center" variant="body1">

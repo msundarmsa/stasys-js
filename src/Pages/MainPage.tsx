@@ -212,6 +212,7 @@ export default function MainPage() {
               yMax={40}
               yAxisLabel="displacement (mm)"
               xAxisLoc="middle"
+              name="shotplot"
             />
           </div>
         </div>
