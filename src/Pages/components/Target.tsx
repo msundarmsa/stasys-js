@@ -86,7 +86,7 @@ export const ZoomedTarget = ( {shots}: {shots: Shot[]}) => {
 
         const cX = (rX + SEVEN_RING_SIZE) / (2 * SEVEN_RING_SIZE) * 100;
         const cY = (SEVEN_RING_SIZE - rY) / (2 * SEVEN_RING_SIZE) * 100;
-        return {inside: inside, x: cX, y: cY, angle: shot.angle * 180 / Math.PI};
+        return {inside: inside, x: cX, y: cY, angle: (Math.PI / 2 - shot.angle) * 180 / Math.PI};
     }
 
     return (
@@ -96,7 +96,7 @@ export const ZoomedTarget = ( {shots}: {shots: Shot[]}) => {
             })}
             {shots.map((shot, _) => transformShot(shot)).map((plot, _) => {
                 return ( plot.inside ? <circle cx={`${plot.x}%`} cy={`${plot.y}%`} fill="#000000" r={`${shotSize}%`} stroke="#ffffff" strokeWidth={3} /> 
-                                     : <svg id="triangle" viewBox="0 0 100 100" height={`${2 * shotSize}%`} width={`${2 * shotSize}%`} x={`${plot.x - shotSize}%`} y={`${plot.y - shotSize}%`}> <polygon x="-50%" y="-50%" points="0 100, 50 0, 100 100" height="10" width="10" /> </svg>
+                                     : <g transform={`rotate(${plot.angle})`} style={{ transformOrigin: "center", transformBox: "fill-box" }}> <svg id="triangle" viewBox="0 0 100 100" height={`${2 * shotSize}%`} width={`${2 * shotSize}%`} x={`${plot.x - shotSize}%`} y={`${plot.y - shotSize}%`}> <polygon x="-50%" y="-50%" points="0 100, 50 0, 100 100" fill="#DF2935" strokeWidth={3} stroke="#ffffff"/> </svg> </g>
                 )
             })}
         </svg>
