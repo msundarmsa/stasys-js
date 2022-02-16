@@ -1,19 +1,19 @@
-import * as React from 'react';
-import { render } from 'react-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
-import '@fontsource/roboto/300.css';
-import '@fontsource/roboto/400.css';
-import '@fontsource/roboto/500.css';
-import '@fontsource/roboto/700.css';
+import * as React from "react";
+import { render } from "react-dom";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { CssBaseline } from "@mui/material";
+import "@fontsource/roboto/300.css";
+import "@fontsource/roboto/400.css";
+import "@fontsource/roboto/500.css";
+import "@fontsource/roboto/700.css";
 
-import MainPage from './Pages/MainPage';
+import MainPage from "./Pages/MainPage";
 
 function App() {
   const darkTheme = createTheme({
     palette: {
-      mode: 'dark',
-    }
+      mode: "dark",
+    },
   });
 
   return (
@@ -24,4 +24,4 @@ function App() {
   );
 }
 
-render(<App />, document.getElementById('root'));
+render(<App />, document.getElementById("root"));

@@ -17,7 +17,8 @@
     "typeRoots": [ "typings/" ],
     "paths": {
       "*": ["node_modules/*"]
-    }
+    },
+    "noUnusedParameters": false
   },
   "include": ["src/**/*"]
 }

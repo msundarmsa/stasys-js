@@ -6,9 +6,9 @@ import {
   Slider,
   Stack,
   Typography,
-} from '@mui/material';
-import { useState, useEffect } from 'react';
-import LineChart from './LineChart';
+} from "@mui/material";
+import { useState, useEffect } from "react";
+import LineChart from "./LineChart";
 
 const Mic = () => {
   const [devices, setDevices] = useState<MediaDeviceInfo[] | []>([]);
@@ -19,7 +19,7 @@ const Mic = () => {
     setAnchorEl(event.currentTarget);
   };
   const [micStarted, setMicStarted] = useState(false);
-  const [deviceLabel, setDeviceLabel] = useState('');
+  const [deviceLabel, setDeviceLabel] = useState("");
   const [data, setData] = useState<{ x: number; y: number }[]>([]);
   const [audioInterval, setAudioInterval] = useState<NodeJS.Timer>();
   const [audioContext, setAudioContext] = useState<AudioContext>();
@@ -34,7 +34,7 @@ const Mic = () => {
     setDevices(
       mydevices.filter(
         (device) =>
-          device.kind === 'audioinput' && !device.label.startsWith('Default')
+          device.kind === "audioinput" && !device.label.startsWith("Default")
       )
     );
   }
@@ -55,7 +55,7 @@ const Mic = () => {
     }
 
     setMicStarted(false);
-    setDeviceLabel('');
+    setDeviceLabel("");
     setData([]);
   };
 
@@ -131,12 +131,12 @@ const Mic = () => {
         open={open}
         onClose={closeMics}
         anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
+          vertical: "top",
+          horizontal: "left",
         }}
         transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
+          vertical: "top",
+          horizontal: "left",
         }}
       >
         {devices.map((device) => (
@@ -147,18 +147,18 @@ const Mic = () => {
       </Menu>
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'row',
+          display: "flex",
+          flexDirection: "row",
           p: 1,
           m: 1,
-          justifyContent: 'center',
+          justifyContent: "center",
         }}
       >
         <Button
           id="webcams-menu-btn"
-          aria-controls={open ? 'mics-menu' : undefined}
+          aria-controls={open ? "mics-menu" : undefined}
           aria-haspopup="true"
-          aria-expanded={open ? 'true' : undefined}
+          aria-expanded={open ? "true" : undefined}
           onClick={openMics}
           variant="contained"
           sx={{ mr: 2 }}
@@ -166,7 +166,7 @@ const Mic = () => {
           <span role="img" aria-label="mic">
             🎙
           </span>
-          {deviceLabel === '' ? 'Choose a mic' : deviceLabel}
+          {deviceLabel === "" ? "Choose a mic" : deviceLabel}
         </Button>
         {micStarted ? (
           <Button onClick={stopMic} variant="contained" color="error">
@@ -176,11 +176,11 @@ const Mic = () => {
       </Box>
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'row',
+          display: "flex",
+          flexDirection: "row",
           p: 1,
           m: 1,
-          justifyContent: 'center',
+          justifyContent: "center",
         }}
       >
         <LineChart data={data} refLevel={refLevel} />

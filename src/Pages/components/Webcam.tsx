@@ -8,8 +8,8 @@ import {
   Slider,
   Stack,
   Typography,
-} from '@mui/material';
-import { useState, useRef, useEffect } from 'react';
+} from "@mui/material";
+import { useState, useRef, useEffect } from "react";
 // eslint-disable-next-line import/no-unresolved
 import Worker from "worker-loader!./Worker";
 
@@ -23,7 +23,7 @@ const Webcam = () => {
     setAnchorEl(event.currentTarget);
   };
   const [webcamStarted, setWebcamStarted] = useState(false);
-  const [deviceLabel, setDeviceLabel] = useState('');
+  const [deviceLabel, setDeviceLabel] = useState("");
   const [threshs, setThreshs] = useState([120, 150]);
   const [showCircle, setShowCircle] = useState(false);
   const [showThreshs, setShowThreshs] = useState(false);
@@ -35,7 +35,7 @@ const Webcam = () => {
 
   async function getWebcams() {
     const mydevices = await navigator.mediaDevices.enumerateDevices();
-    setDevices(mydevices.filter((device) => device.kind === 'videoinput'));
+    setDevices(mydevices.filter((device) => device.kind === "videoinput"));
   }
 
   useEffect(() => {
@@ -45,11 +45,11 @@ const Webcam = () => {
   const stopWebcam = () => {
     // send stop signal to main process
     if (cameraWorker != null) {
-      cameraWorker.postMessage({ cmd: 'STOP_CAMERA' });
+      cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
     }
     setCameraWorker(null);
     setWebcamStarted(false);
-    setDeviceLabel('');
+    setDeviceLabel("");
   };
 
   async function selectWebcam(device: MediaDeviceInfo) {
@@ -65,58 +65,64 @@ const Webcam = () => {
     await navigator.mediaDevices.getUserMedia({
       audio: false,
       video: {
-        deviceId: device.deviceId
-      }
+        deviceId: device.deviceId,
+      },
     });
 
     // send start signal to main process
     const deviceIndex = devices.indexOf(device);
     const myCameraWorker = new Worker();
-    myCameraWorker.postMessage({ cmd: 'SET_THRESHS', threshs: threshs});
-    myCameraWorker.postMessage({ cmd: 'SET_SHOW_THRESH', showThreshs: showThreshs});
-    myCameraWorker.postMessage({ cmd: 'SET_SHOW_CIRCLE', showCircle: showCircle});
-    myCameraWorker.postMessage({ cmd: 'START_CAMERA', cameraId: deviceIndex });
+    myCameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: threshs });
+    myCameraWorker.postMessage({
+      cmd: "SET_SHOW_THRESH",
+      showThreshs: showThreshs,
+    });
+    myCameraWorker.postMessage({
+      cmd: "SET_SHOW_CIRCLE",
+      showCircle: showCircle,
+    });
+    myCameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: deviceIndex });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    myCameraWorker.onmessage = event => {
-      if (event.data.cmd == 'STOPPED_CAMERA') {
+    myCameraWorker.onmessage = (event) => {
+      if (event.data.cmd == "STOPPED_CAMERA") {
         myCameraWorker.terminate();
-      } else if (event.data.cmd == 'GRABBED_FRAME') {
+      } else if (event.data.cmd == "GRABBED_FRAME") {
         if (canvasRef.current) {
           // set canvas dimensions
           canvasRef.current.height = event.data.height;
           canvasRef.current.width = event.data.width;
 
           // set image data
-          const ctx = canvasRef.current.getContext('2d');
+          const ctx = canvasRef.current.getContext("2d");
           if (ctx) {
             ctx.putImageData(event.data.frame, 0, 0);
           }
         }
       }
-    }
+    };
     setCameraWorker(myCameraWorker);
   }
 
   const threshsChanged = (newThreshs: number[]) => {
     if (cameraWorker) {
-      cameraWorker.postMessage({ cmd: 'SET_THRESHS', threshs: newThreshs });
+      cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: newThreshs });
     }
     setThreshs(newThreshs);
-  }
+  };
 
   const showThreshsChanged = (show: boolean) => {
     if (cameraWorker) {
-      cameraWorker.postMessage({ cmd: 'SET_SHOW_THRESHS', showThreshs: show });
+      cameraWorker.postMessage({ cmd: "SET_SHOW_THRESHS", showThreshs: show });
     }
     setShowThreshs(show);
-  }
+  };
 
   const showCircleChanged = (show: boolean) => {
     if (cameraWorker) {
-      cameraWorker.postMessage({ cmd: 'SET_SHOW_CIRCLE', showCircle: show });
+      cameraWorker.postMessage({ cmd: "SET_SHOW_CIRCLE", showCircle: show });
     }
     setShowCircle(show);
-  }
+  };
 
   return (
     <div>
@@ -127,12 +133,12 @@ const Webcam = () => {
         open={open}
         onClose={closeWebcams}
         anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
+          vertical: "top",
+          horizontal: "left",
         }}
         transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
+          vertical: "top",
+          horizontal: "left",
         }}
       >
         {devices.map((device) => (
@@ -143,18 +149,18 @@ const Webcam = () => {
       </Menu>
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'row',
+          display: "flex",
+          flexDirection: "row",
           p: 1,
           m: 1,
-          justifyContent: 'center',
+          justifyContent: "center",
         }}
       >
         <Button
           id="webcams-menu-btn"
-          aria-controls={open ? 'webcams-menu' : undefined}
+          aria-controls={open ? "webcams-menu" : undefined}
           aria-haspopup="true"
-          aria-expanded={open ? 'true' : undefined}
+          aria-expanded={open ? "true" : undefined}
           onClick={openWebcams}
           variant="contained"
           sx={{ mr: 2 }}
@@ -162,7 +168,7 @@ const Webcam = () => {
           <span role="img" aria-label="webcam">
             🎥
           </span>
-          {deviceLabel === '' ? 'Choose a webcam' : deviceLabel}
+          {deviceLabel === "" ? "Choose a webcam" : deviceLabel}
         </Button>
         {webcamStarted ? (
           <Button onClick={stopWebcam} variant="contained" color="error">
@@ -172,18 +178,18 @@ const Webcam = () => {
       </Box>
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'row',
+          display: "flex",
+          flexDirection: "row",
           p: 1,
           m: 1,
-          justifyContent: 'center',
+          justifyContent: "center",
         }}
       >
         <canvas
           ref={canvasRef}
           style={{
-            width: '100%',
-            aspectRatio: '1280/720',
+            width: "100%",
+            aspectRatio: "1280/720",
           }}
         />
       </Box>
@@ -201,11 +207,11 @@ const Webcam = () => {
       </Stack>
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'row',
+          display: "flex",
+          flexDirection: "row",
           p: 1,
           m: 1,
-          justifyContent: 'center',
+          justifyContent: "center",
         }}
       >
         <FormControlLabel

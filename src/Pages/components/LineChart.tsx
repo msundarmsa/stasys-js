@@ -1,7 +1,16 @@
-import { axisLeft, axisBottom, scaleLinear, select, line as d3Line } from 'd3';
-import { useEffect, useState, useRef } from 'react';
+import { axisLeft, axisBottom, scaleLinear, select, line as d3Line } from "d3";
+import { useEffect, useState, useRef } from "react";
 
-const LineChart = ({ data, refLevel, xMin, xMax, yMin, yMax, xAxisLoc, yAxisLabel }: IProps) => {
+const LineChart = ({
+  data,
+  refLevel,
+  xMin,
+  xMax,
+  yMin,
+  yMax,
+  xAxisLoc,
+  yAxisLabel,
+}: IProps) => {
   const [firstRender, setFirstRender] = useState(true);
   const svgElem = useRef<SVGSVGElement>(null);
 
@@ -51,12 +60,12 @@ const LineChart = ({ data, refLevel, xMin, xMax, yMin, yMax, xAxisLoc, yAxisLabe
 
     if (firstRender) {
       // add placeholder for axes
-      select('.line-chart').append('g').attr('class', 'line-chart-yaxis');
-      select('.line-chart').append('g').attr('class', 'line-chart-xaxis');
+      select(".line-chart").append("g").attr("class", "line-chart-yaxis");
+      select(".line-chart").append("g").attr("class", "line-chart-xaxis");
 
       // add placeholder for lines
-      select('.line-chart').append('path').attr('class', 'line-chart-line');
-      select('.line-chart').append('path').attr('class', 'line-chart-ref-line');
+      select(".line-chart").append("path").attr("class", "line-chart-line");
+      select(".line-chart").append("path").attr("class", "line-chart-ref-line");
 
       setFirstRender(false);
     }
@@ -74,35 +83,35 @@ const LineChart = ({ data, refLevel, xMin, xMax, yMin, yMax, xAxisLoc, yAxisLabe
     const xAxis = axisBottom(xScale).ticks(5);
 
     // y-axis label
-    let yAxisLabelStr = 'Volume';
+    let yAxisLabelStr = "Volume";
     if (yAxisLabel) {
       yAxisLabelStr = yAxisLabel;
     }
-    select('#y-axis-label').remove();
-    select('.line-chart')
-      .append('g')
-      .attr('id', 'y-axis-label')
-      .attr('transform', `translate(${MARGINS.left - 30}, ${height / 2})`)
-      .append('text')
-      .attr('text-anchor', 'middle')
-      .attr('transform', 'rotate(-90)')
-      .style('fill', 'white')
+    select("#y-axis-label").remove();
+    select(".line-chart")
+      .append("g")
+      .attr("id", "y-axis-label")
+      .attr("transform", `translate(${MARGINS.left - 30}, ${height / 2})`)
+      .append("text")
+      .attr("text-anchor", "middle")
+      .attr("transform", "rotate(-90)")
+      .style("fill", "white")
       .text(yAxisLabelStr);
 
     // draw axes
-    if (xAxisLoc && xAxisLoc == 'middle') {
-      select('.line-chart-xaxis')
-        .attr('transform', `translate(0, ${height / 2})`)
+    if (xAxisLoc && xAxisLoc == "middle") {
+      select(".line-chart-xaxis")
+        .attr("transform", `translate(0, ${height / 2})`)
         // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
         .call(xAxis);
     } else {
-      select('.line-chart-xaxis')
-        .attr('transform', `translate(0, ${height - MARGINS.bottom})`)
+      select(".line-chart-xaxis")
+        .attr("transform", `translate(0, ${height - MARGINS.bottom})`)
         // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
         .call(xAxis);
     }
-   select('.line-chart-yaxis')
-      .attr('transform', `translate(${MARGINS.left}, 0)`)
+    select(".line-chart-yaxis")
+      .attr("transform", `translate(${MARGINS.left}, 0)`)
       // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
       .call(yAxis);
 
@@ -113,12 +122,12 @@ const LineChart = ({ data, refLevel, xMin, xMax, yMin, yMax, xAxisLoc, yAxisLabe
       // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
       .y((point) => yScale(point.y));
 
-    select('.line-chart-line')
+    select(".line-chart-line")
       // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
-      .attr('d', line(data))
-      .attr('fill', 'none')
-      .attr('stroke', '#0071dd')
-      .attr('stroke-width', 1.5);
+      .attr("d", line(data))
+      .attr("fill", "none")
+      .attr("stroke", "#0071dd")
+      .attr("stroke-width", 1.5);
 
     // draw ref line
     if (refLevel) {
@@ -128,12 +137,12 @@ const LineChart = ({ data, refLevel, xMin, xMax, yMin, yMax, xAxisLoc, yAxisLabe
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         .y((_) => yScale(refLevel));
 
-      select('.line-chart-ref-line')
+      select(".line-chart-ref-line")
         // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
-        .attr('d', refLine(data))
-        .attr('fill', 'none')
-        .attr('stroke', '#755f89')
-        .attr('stroke-width', 1.5);
+        .attr("d", refLine(data))
+        .attr("fill", "none")
+        .attr("stroke", "#755f89")
+        .attr("stroke-width", 1.5);
     }
   }, [firstRender, data, refLevel, svgElem]);
 
@@ -142,7 +151,7 @@ const LineChart = ({ data, refLevel, xMin, xMax, yMin, yMax, xAxisLoc, yAxisLabe
       ref={svgElem}
       className="line-chart"
       width="100%"
-      style={{ aspectRatio: '1280/720' }}
+      style={{ aspectRatio: "1280/720" }}
     />
   );
 };
