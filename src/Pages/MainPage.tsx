@@ -45,11 +45,11 @@ export default function MainPage() {
   const [shootStarted, setShootStarted] = useState(false);
 
   // camera thread
-  const [cameraWorker, setCameraWorker] = useState<CameraWorker | null>(null);
+  let cameraWorker: CameraWorker | null = null;
   
   // mic thread
-  const [audioInterval, setAudioInterval] = useState<NodeJS.Timer>();
-  const [audioContext, setAudioContext] = useState<AudioContext>();
+  let audioInterval: NodeJS.Timer | undefined = undefined;
+  let audioContext: AudioContext | undefined = undefined;
   const triggerLock = 5000; // trigger is locked for 5ms once triggered
 
   // user options
@@ -146,13 +146,13 @@ export default function MainPage() {
 
   const startWebcam = () => {
     // start & send start signal to worker process
-    const myCameraWorker = new CameraWorker();
-    myCameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
-    myCameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "CALIBRATE", testTriggers: [500] });
+    cameraWorker = new CameraWorker();
+    cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
+    cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "CALIBRATE", testTriggers: [] });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    myCameraWorker.onmessage = (event) => {
+    cameraWorker.onmessage = (event) => {
       if (event.data.cmd == "STOPPED_CAMERA") {
-        myCameraWorker.terminate();
+        cameraWorker?.terminate();
       } else if (event.data.cmd == "CALIBRATION_FINISHED") {
         if (event.data.success) {
           console.log(event.data.calibratePoint);
@@ -162,11 +162,11 @@ export default function MainPage() {
           setCalibrationError(event.data.errorMsg);
         }
         stopWebcam();
+        stopMic();
         setCalibrateStarted(false);
         handleCalibrationSBOpen();
       }
     };
-    setCameraWorker(myCameraWorker);
   }
 
   const stopWebcam = () => {
@@ -174,7 +174,7 @@ export default function MainPage() {
     if (cameraWorker != null) {
       cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
     }
-    setCameraWorker(null);
+    cameraWorker = null;
   }
 
   const startMic = async () => {
@@ -186,9 +186,9 @@ export default function MainPage() {
     };
 
     const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    const context = new AudioContext();
-    const source = context.createMediaStreamSource(stream);
-    const analyser = context.createAnalyser();
+    audioContext = new AudioContext();
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
     analyser.fftSize = 512;
     analyser.minDecibels = -127;
     analyser.maxDecibels = 0;
@@ -199,8 +199,8 @@ export default function MainPage() {
     const intervalMs = 1000 / fps;
 
     let lastTrigger = -1;
-    console.group("mic group");
-    const interval = setInterval(() => {
+    const myCameraWorker = cameraWorker;
+    audioInterval = setInterval(() => {
         // get data from audio stream
         const volumes = new Uint8Array(analyser.frequencyBinCount);
         analyser.getByteFrequencyData(volumes);
@@ -214,26 +214,23 @@ export default function MainPage() {
         const volume = volumeSum / volumes.length / 127;
         const triggerLocked = lastTrigger >= 0 && (currTime - lastTrigger) <= triggerLock;
         if (volume > micThresh && !triggerLocked) {
-          if (cameraWorker) {
-            cameraWorker.postMessage( { cmd: 'TRIGGER', time: currTime });
+          if (myCameraWorker) {
+            myCameraWorker.postMessage( { cmd: "TRIGGER", time: currTime });
           }
           lastTrigger = currTime;
-          console.log("TRIGGERED");
         }
     }, intervalMs);
-    setAudioInterval(interval);
-    setAudioContext(context);
   }
 
   const stopMic = () => {
     if (audioInterval) {
       clearInterval(audioInterval);
-      setAudioInterval(undefined);
+      audioInterval = undefined;
     }
 
     if (audioContext) {
       audioContext.close();
-      setAudioContext(undefined);
+      audioContext = undefined;
     }
   }
 
@@ -250,7 +247,7 @@ export default function MainPage() {
       setCalibrationError("Calibration stopped by user");
       handleCalibrationSBOpen();
     } else {
-      // startWebcam();
+      startWebcam();
       startMic();
       setCalibrateStarted(true);
     }
