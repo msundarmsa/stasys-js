@@ -13,7 +13,7 @@ import { useState, useRef, useEffect } from "react";
 // eslint-disable-next-line import/no-unresolved
 import CameraWorker from "worker-loader!./CameraWorker";
 
-const Webcam = () => {
+const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection }: IProps) => {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // menu
@@ -28,6 +28,7 @@ const Webcam = () => {
   const [showCircle, setShowCircle] = useState(false);
   const [showThreshs, setShowThreshs] = useState(false);
   const [cameraWorker, setCameraWorker] = useState<CameraWorker | null>(null);
+  const [upDownDetection, setUpDownDetection] = useState(true);
 
   const closeWebcams = () => {
     setAnchorEl(null);
@@ -59,6 +60,7 @@ const Webcam = () => {
     }
     setWebcamStarted(true);
     setDeviceLabel(device.label);
+    setCameraId(devices.indexOf(device));
     closeWebcams();
 
     // mock create stream to get permission
@@ -108,6 +110,7 @@ const Webcam = () => {
       cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: newThreshs });
     }
     setThreshs(newThreshs);
+    setCameraThreshs(newThreshs);
   };
 
   const showThreshsChanged = (show: boolean) => {
@@ -234,9 +237,28 @@ const Webcam = () => {
           }
           label="Show detected circle"
         />
+        <FormControlLabel
+          control={
+            <Checkbox
+              aria-label="upDownDetection"
+              checked={upDownDetection}
+              onChange={(_1, checked) => {
+                setUpDownDetection(checked);
+                setCameraUpDownDetection(checked);
+              }}
+            />
+          }
+          label="Up/Down Detection"
+        />
       </Box>
     </div>
   );
 };
+
+interface IProps {
+  setCameraId: (id: number) => void;
+  setCameraThreshs: (threshs: number[]) => void;
+  setCameraUpDownDetection: (upDownDetection: boolean) => void;
+}
 
 export default Webcam;

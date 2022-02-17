@@ -7,7 +7,7 @@ electron.ipcRenderer.getOpenCVVersion((version) => {
   console.log(`(SettingsPage) OpenCV Version: ${version}`);
 });
 
-const SettingsPage = () => {
+const SettingsPage = ( {setCameraId, setMicId, setCameraThreshs, setMicThresh, setCameraUpDownDetection }: IProps) => {
   return (
     <div>
       <Typography textAlign="center" variant="h3">
@@ -22,14 +22,22 @@ const SettingsPage = () => {
         }}
       >
         <Box sx={{ width: "50%", p: 1 }}>
-          <Mic />
+          <Mic setMicId={setMicId} setMicThresh={setMicThresh} />
         </Box>
         <Box sx={{ width: "50%", p: 1 }}>
-          <Webcam />
+          <Webcam setCameraId={setCameraId} setCameraThreshs={setCameraThreshs} setCameraUpDownDetection={setCameraUpDownDetection} />
         </Box>
       </Box>
     </div>
   );
 };
+
+interface IProps {
+  setCameraId: (id: number) => void;
+  setMicId: (id: string) => void;
+  setCameraThreshs: (threshs: number[]) => void;
+  setMicThresh: (thresh: number) => void;
+  setCameraUpDownDetection: (upDownDetection: boolean) => void;
+}
 
 export default SettingsPage;

@@ -58,7 +58,7 @@ ctx.onmessage = (event) => {
     frameId = 0;
 
     mode = event.data.mode;
-    const fps = mode != "DISPLAY" ? 250 : 30;
+    const fps = mode != "DISPLAY" ? 1000 : 30;
 
     testTriggers = event.data.testTriggers;
 
@@ -88,7 +88,8 @@ ctx.onmessage = (event) => {
 };
 
 const startCamera = (cameraId: number, fps: number) => {
-  const intervalMs = 1000 / fps;
+  // const intervalMs = 1000 / fps;
+  const intervalMs = 1;
 
   video = new cv.VideoCapture("/Users/msundarmsa/stasys/300820/1/shot.mp4");
   // video = new cv.VideoCapture(cameraId);

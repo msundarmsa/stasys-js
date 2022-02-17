@@ -10,7 +10,7 @@ import {
 import { useState, useEffect } from "react";
 import LineChart from "./LineChart";
 
-const Mic = () => {
+const Mic = ({ setMicId, setMicThresh }: IProps) => {
   const [devices, setDevices] = useState<MediaDeviceInfo[] | []>([]);
   // menu
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -65,6 +65,7 @@ const Mic = () => {
 
     setMicStarted(true);
     setDeviceLabel(device.label);
+    setMicId(device.deviceId);
     closeMics();
 
     const constraints = {
@@ -192,12 +193,21 @@ const Mic = () => {
           step={0.001}
           min={0}
           max={1}
-          // @ts-expect-error: expect error here due to possibility that newLevel be an array
-          onChange={(_1, newLevel, _2) => setRefLevel(newLevel)}
+          onChange={(_1, newLevel, _2) => {
+            // @ts-expect-error: expect error here due to possibility that newLevel be an array
+            setRefLevel(newLevel);
+            // @ts-expect-error: expect error here due to possibility that newLevel be an array
+            setMicThresh(newLevel);
+          }}
         />
       </Stack>
     </div>
   );
 };
+
+interface IProps {
+  setMicId: (id: string) => void;
+  setMicThresh: (thresh: number) => void;
+}
 
 export default Mic;

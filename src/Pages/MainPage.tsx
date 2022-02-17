@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -21,22 +21,38 @@ export default function MainPage() {
   const handleSettingsPageOpen = () => setSettingsPageOpen(true);
   const handleSettingPageClose = () => setSettingsPageOpen(false);
 
+  // calibration snack bar
   const [calibrationSBOpen, setCalibrationSBOpen] = useState(false);
   const handleCalibrationSBOpen = () => setCalibrationSBOpen(true);
   const handleCalibrationSBClose = () => setCalibrationSBOpen(false);
   const [calibrationError, setCalibrationError] = useState("");
 
+  // audio video snack bar
+  const [avSBOpen, setAVSBOpen] = useState(false);
+  const handleAVSBOpen = () => setAVSBOpen(true);
+  const handleAVSBClose = () => setAVSBOpen(false);
+
+  // target and zoomed target
   const [shots, setShots] = useState<Shot[]>([]);
   const [shotGroups, setShotGroups] = useState<Shot[][]>([]);
   const [allShots, setAllShots] = useState<Shot[]>([]);
   const [shot, setShot] = useState<Shot>();
   const [beforeTrace, setBeforeTrace] = useState<[number, number]>();
   const [afterTrace, setAfterTrace] = useState<[number, number]>();
+
+  // buttons
   const [calibrateStarted, setCalibrateStarted] = useState(false);
   const [shootStarted, setShootStarted] = useState(false);
+
+  // camera thread
   const [cameraWorker, setCameraWorker] = useState<CameraWorker | null>(null);
-  const [cameraId, setCameraId] = useState(0);
-  const [threshs, setThreshs] = useState([120, 150]);
+
+  // user options
+  const [cameraId, setCameraId] = useState(-1);
+  const [micId, setMicId] = useState("");
+  const [cameraUpDownDetection, setCameraUpDownDetection] = useState(true);
+  const [cameraThreshs, setCameraThreshs] = useState<number[]>([120, 150]);
+  const [micThresh, setMicThresh] = useState(0.7);
   const [calibratePoint, setCalibratePoint] = useState<TracePoint>(defaultCalibratePoint());
 
   const style = {
@@ -81,6 +97,38 @@ export default function MainPage() {
     handleCalibrationSBOpen();
   };
 
+  async function chooseDefaultCameraAndMic() {
+    const mydevices = await navigator.mediaDevices.enumerateDevices();
+    let cameraIdx = 0;
+    const user_chose_video = cameraId != -1;
+    const user_chose_audio = micId != "";
+    let usbAudioExists = false;
+    let usbVideoExists = false;
+    for (let i = 0; i < mydevices.length; i++) {
+      const is_video = mydevices[i].kind == "videoinput";
+      const is_audio = mydevices[i].kind == "audioinput";
+      const is_usb = mydevices[i].label.includes("USB");
+      if (is_video) {
+        if (is_usb && !user_chose_video) {
+          setCameraId(cameraIdx);
+          usbAudioExists = true;
+        }
+        cameraIdx++;
+      } else if (is_audio && is_usb && !user_chose_audio) {
+        setMicId(mydevices[i].deviceId);
+        usbVideoExists = true;
+      }
+    }
+
+    if ((!user_chose_video && !usbVideoExists) || (!user_chose_audio && !usbAudioExists)) {
+      handleAVSBOpen();
+    }
+  }
+
+  useEffect(() => {
+    chooseDefaultCameraAndMic();
+  }, []);
+
   const stopWebcam = () => {
     // send stop signal to worker process
     if (cameraWorker != null) {
@@ -92,7 +140,7 @@ export default function MainPage() {
   const startCalibrate = () => {
     // start & send start signal to worker process
     const myCameraWorker = new CameraWorker();
-    myCameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: threshs });
+    myCameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
     myCameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "CALIBRATE", testTriggers: [500] });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     myCameraWorker.onmessage = (event) => {
@@ -169,7 +217,12 @@ export default function MainPage() {
             aria-describedby="modal-modal-description"
           >
             <Box sx={style}>
-              <SettingsPage />
+              <SettingsPage 
+                setCameraId={setCameraId}
+                setMicId={setMicId}
+                setCameraThreshs={setCameraThreshs}
+                setMicThresh={setMicThresh}
+                setCameraUpDownDetection={setCameraUpDownDetection} />
             </Box>
           </Modal>
           <Button color={calibrateStarted ? "info" : "inherit"} onClick={calibrateClick}>{calibrateStarted ? "CALIBRATING" : "CALIBRATE" }</Button>
@@ -285,6 +338,11 @@ export default function MainPage() {
       <Snackbar open={calibrationSBOpen} autoHideDuration={10000} onClose={handleCalibrationSBClose}>
         <Alert onClose={handleCalibrationSBClose} severity={calibrationError == "" ? "success" : "error"} sx={{ width: '100%' }}>
           {calibrationError == "" ? "Calibration finished!" : "Calibration failed: " + calibrationError}
+        </Alert>
+      </Snackbar>
+      <Snackbar open={avSBOpen} autoHideDuration={10000} onClose={handleAVSBClose}>
+        <Alert onClose={handleAVSBClose} severity="error" sx={{ width: '100%' }}>
+          Could not find USB camera/mic. Please go to settings dialog and manually select the camera and microphone.
         </Alert>
       </Snackbar>
     </div>
