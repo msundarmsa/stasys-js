@@ -70,7 +70,7 @@ ctx.onmessage = (event) => {
     }
 
     ctx.postMessage({ cmd: "STOPPED_CAMERA" });
-  } else if (event.data.cmd == "TRIGGER_RECEIVED") {
+  } else if (event.data.cmd == "TRIGGER") {
     triggerTime = event.data.time;
   } else if (event.data.cmd == "SET_THRESHS") {
     threshs = event.data.threshs;

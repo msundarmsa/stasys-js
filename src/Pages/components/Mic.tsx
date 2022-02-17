@@ -23,7 +23,7 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
   const [data, setData] = useState<{ x: number; y: number }[]>([]);
   const [audioInterval, setAudioInterval] = useState<NodeJS.Timer>();
   const [audioContext, setAudioContext] = useState<AudioContext>();
-  const [refLevel, setRefLevel] = useState(0);
+  const [refLevel, setRefLevel] = useState(0.7);
 
   const closeMics = () => {
     setAnchorEl(null);
@@ -51,6 +51,7 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
 
     if (audioContext) {
       audioContext.close();
+      setAudioContext(undefined);
     }
 
     setMicStarted(false);

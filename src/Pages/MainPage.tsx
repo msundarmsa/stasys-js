@@ -19,7 +19,7 @@ export default function MainPage() {
   // settings modal
   const [settingsPageOpen, setSettingsPageOpen] = useState(false);
   const handleSettingsPageOpen = () => setSettingsPageOpen(true);
-  const handleSettingPageClose = () => setSettingsPageOpen(false);
+  const handleSettingsPageClose = () => setSettingsPageOpen(false);
 
   // calibration snack bar
   const [calibrationSBOpen, setCalibrationSBOpen] = useState(false);
@@ -46,6 +46,11 @@ export default function MainPage() {
 
   // camera thread
   const [cameraWorker, setCameraWorker] = useState<CameraWorker | null>(null);
+  
+  // mic thread
+  const [audioInterval, setAudioInterval] = useState<NodeJS.Timer>();
+  const [audioContext, setAudioContext] = useState<AudioContext>();
+  const triggerLock = 5000; // trigger is locked for 5ms once triggered
 
   // user options
   const [cameraId, setCameraId] = useState(-1);
@@ -104,6 +109,8 @@ export default function MainPage() {
     const user_chose_audio = micId != "";
     let usbAudioExists = false;
     let usbVideoExists = false;
+    let firstCameraId = -1;
+    let firstMicId = "";
     for (let i = 0; i < mydevices.length; i++) {
       const is_video = mydevices[i].kind == "videoinput";
       const is_audio = mydevices[i].kind == "audioinput";
@@ -111,16 +118,24 @@ export default function MainPage() {
       if (is_video) {
         if (is_usb && !user_chose_video) {
           setCameraId(cameraIdx);
-          usbAudioExists = true;
+          usbVideoExists = true;
+        } else if (!user_chose_video && firstCameraId < 0) {
+          firstCameraId = cameraIdx;
         }
         cameraIdx++;
-      } else if (is_audio && is_usb && !user_chose_audio) {
-        setMicId(mydevices[i].deviceId);
-        usbVideoExists = true;
+      } else if (is_audio) {
+        if (is_usb && !user_chose_audio) {
+          setMicId(mydevices[i].deviceId);
+          usbAudioExists = true;
+        } else if (!user_chose_audio && firstMicId == "") {
+          firstMicId = mydevices[i].deviceId;
+        }
       }
     }
 
     if ((!user_chose_video && !usbVideoExists) || (!user_chose_audio && !usbAudioExists)) {
+      setCameraId(firstCameraId);
+      setMicId(firstMicId);
       handleAVSBOpen();
     }
   }
@@ -129,15 +144,7 @@ export default function MainPage() {
     chooseDefaultCameraAndMic();
   }, []);
 
-  const stopWebcam = () => {
-    // send stop signal to worker process
-    if (cameraWorker != null) {
-      cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
-    }
-    setCameraWorker(null);
-  }
-
-  const startCalibrate = () => {
+  const startWebcam = () => {
     // start & send start signal to worker process
     const myCameraWorker = new CameraWorker();
     myCameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
@@ -160,21 +167,92 @@ export default function MainPage() {
       }
     };
     setCameraWorker(myCameraWorker);
-    setCalibrateStarted(true);
   }
 
-  const stopCalibrate = () => {
-    stopWebcam();
-    setCalibrateStarted(false);
-    setCalibrationError("Calibration stopped by user");
-    handleCalibrationSBOpen();
+  const stopWebcam = () => {
+    // send stop signal to worker process
+    if (cameraWorker != null) {
+      cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
+    }
+    setCameraWorker(null);
+  }
+
+  const startMic = async () => {
+    const constraints = {
+      video: false,
+      audio: {
+        deviceId: micId,
+      },
+    };
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    const context = new AudioContext();
+    const source = context.createMediaStreamSource(stream);
+    const analyser = context.createAnalyser();
+    analyser.fftSize = 512;
+    analyser.minDecibels = -127;
+    analyser.maxDecibels = 0;
+    analyser.smoothingTimeConstant = 0.4;
+    source.connect(analyser);
+
+    const fps = 120;
+    const intervalMs = 1000 / fps;
+
+    let lastTrigger = -1;
+    console.group("mic group");
+    const interval = setInterval(() => {
+        // get data from audio stream
+        const volumes = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(volumes);
+        let volumeSum = 0;
+        for (let i = 0; i < volumes.length; i += 1) {
+          volumeSum += volumes[i];
+        }
+        const currTime = Date.now();
+
+        // Value range: 127 = analyser.maxDecibels - analyser.minDecibels;
+        const volume = volumeSum / volumes.length / 127;
+        const triggerLocked = lastTrigger >= 0 && (currTime - lastTrigger) <= triggerLock;
+        if (volume > micThresh && !triggerLocked) {
+          if (cameraWorker) {
+            cameraWorker.postMessage( { cmd: 'TRIGGER', time: currTime });
+          }
+          lastTrigger = currTime;
+          console.log("TRIGGERED");
+        }
+    }, intervalMs);
+    setAudioInterval(interval);
+    setAudioContext(context);
+  }
+
+  const stopMic = () => {
+    if (audioInterval) {
+      clearInterval(audioInterval);
+      setAudioInterval(undefined);
+    }
+
+    if (audioContext) {
+      audioContext.close();
+      setAudioContext(undefined);
+    }
   }
 
   const calibrateClick = () => {
+    if (cameraId == -1 || micId == "") {
+      handleAVSBOpen();
+      return;
+    }
+
     if (calibrateStarted) {
-      stopCalibrate();
+      stopWebcam();
+      stopMic();
+      setCalibrateStarted(false);
+      setCalibrationError("Calibration stopped by user");
+      handleCalibrationSBOpen();
     } else {
-      startCalibrate();
+      // startWebcam();
+      startMic();
+      setCalibrateStarted(true);
     }
   }
 
@@ -212,7 +290,7 @@ export default function MainPage() {
           </IconButton>
           <Modal
             open={settingsPageOpen}
-            onClose={handleSettingPageClose}
+            onClose={handleSettingsPageClose}
             aria-labelledby="modal-modal-title"
             aria-describedby="modal-modal-description"
           >
@@ -340,9 +418,9 @@ export default function MainPage() {
           {calibrationError == "" ? "Calibration finished!" : "Calibration failed: " + calibrationError}
         </Alert>
       </Snackbar>
-      <Snackbar open={avSBOpen} autoHideDuration={10000} onClose={handleAVSBClose}>
-        <Alert onClose={handleAVSBClose} severity="error" sx={{ width: '100%' }}>
-          Could not find USB camera/mic. Please go to settings dialog and manually select the camera and microphone.
+      <Snackbar open={avSBOpen} autoHideDuration={5000} onClose={handleAVSBClose}>
+        <Alert onClose={handleAVSBClose} severity="info" sx={{ width: '100%' }}>
+          Could not find USB camera/mic. Chosen first available camera/mic. If you would like to change this please go to settings dialog and manually select the camera and microphone.
         </Alert>
       </Snackbar>
     </div>
