@@ -1,7 +1,8 @@
 const ctx: Worker = self as any;
+console.log(`Started camera worker`);
 
 import * as cv from "opencv-bindings";
-import { THRESH_TOZERO_INV } from "opencv-bindings";
+console.log(`Loaded OpenCV`);
 import { TracePoint } from "../../ShotUtils";
 
 // OpenCV test
@@ -49,6 +50,7 @@ let frameId = 0;
 
 // process commands from main thread
 ctx.onmessage = (event) => {
+  console.log(`Received command: ${event.data.cmd}`);
   if (event.data.cmd == "START_CAMERA") {
     if (video != null) {
       // video already started
@@ -58,7 +60,7 @@ ctx.onmessage = (event) => {
     frameId = 0;
 
     mode = event.data.mode;
-    const fps = mode != "DISPLAY" ? 250 : 30;
+    const fps = mode != "DISPLAY" ? 120 : 30;
 
     testTriggers = event.data.testTriggers;
 
@@ -66,8 +68,8 @@ ctx.onmessage = (event) => {
   } else if (event.data.cmd == "STOP_CAMERA") {
     if (video) {
       video.release();
-      video = null;
     }
+    video = null;
 
     ctx.postMessage({ cmd: "STOPPED_CAMERA" });
   } else if (event.data.cmd == "TRIGGER") {
@@ -203,7 +205,7 @@ const processDisplay = (frame: cv.Mat): cv.Mat => {
       255,
       cv.THRESH_TOZERO
     );
-    frame = threshImg.threshold(threshs[1], 255, THRESH_TOZERO_INV);
+    frame = threshImg.threshold(threshs[1], 255, cv.THRESH_TOZERO_INV);
   }
 
   // convert frame back to BGR for displaying

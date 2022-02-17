@@ -11,9 +11,9 @@ import {
 } from "@mui/material";
 import { useState, useRef, useEffect } from "react";
 // eslint-disable-next-line import/no-unresolved
-import CameraWorker from "worker-loader!./CameraWorker";
+import Worker from "worker-loader!./Worker";
 
-const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection }: IProps) => {
+const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection, cameraWorker }: IProps) => {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // menu
@@ -27,7 +27,6 @@ const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection }: IPr
   const [threshs, setThreshs] = useState([120, 150]);
   const [showCircle, setShowCircle] = useState(false);
   const [showThreshs, setShowThreshs] = useState(false);
-  const [cameraWorker, setCameraWorker] = useState<CameraWorker | null>(null);
   const [upDownDetection, setUpDownDetection] = useState(true);
 
   const closeWebcams = () => {
@@ -48,7 +47,6 @@ const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection }: IPr
     if (cameraWorker != null) {
       cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
     }
-    setCameraWorker(null);
     setWebcamStarted(false);
     setDeviceLabel("");
   };
@@ -73,22 +71,22 @@ const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection }: IPr
 
     // start & send start signal to worker process
     const deviceIndex = devices.indexOf(device);
-    const myCameraWorker = new CameraWorker();
-    myCameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: threshs });
-    myCameraWorker.postMessage({
+    if (!cameraWorker) {
+      return;
+    }
+    cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: threshs });
+    cameraWorker.postMessage({
       cmd: "SET_SHOW_THRESH",
       showThreshs: showThreshs,
     });
-    myCameraWorker.postMessage({
+    cameraWorker.postMessage({
       cmd: "SET_SHOW_CIRCLE",
       showCircle: showCircle,
     });
-    myCameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: deviceIndex, mode: "DISPLAY", testTriggers: [] });
+    cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: deviceIndex, mode: "DISPLAY", testTriggers: [] });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    myCameraWorker.onmessage = (event) => {
-      if (event.data.cmd == "STOPPED_CAMERA") {
-        myCameraWorker.terminate();
-      } else if (event.data.cmd == "GRABBED_FRAME") {
+    cameraWorker.onmessage = (event) => {
+      if (event.data.cmd == "GRABBED_FRAME") {
         if (canvasRef.current) {
           // set canvas dimensions
           canvasRef.current.height = event.data.height;
@@ -102,12 +100,12 @@ const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection }: IPr
         }
       }
     };
-    setCameraWorker(myCameraWorker);
   }
 
   const threshsChanged = (newThreshs: number[]) => {
     if (cameraWorker) {
       cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: newThreshs });
+      cameraWorker.onmessage = null;
     }
     setThreshs(newThreshs);
     setCameraThreshs(newThreshs);
@@ -259,6 +257,7 @@ interface IProps {
   setCameraId: (id: number) => void;
   setCameraThreshs: (threshs: number[]) => void;
   setCameraUpDownDetection: (upDownDetection: boolean) => void;
+  cameraWorker: Worker | null;
 }
 
 export default Webcam;

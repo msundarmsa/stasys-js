@@ -13,7 +13,15 @@ import ShotTable from "./components/ShotTable";
 import LineChart from "./components/LineChart";
 import { defaultCalibratePoint, genRandomShots, Shot, TracePoint } from "../ShotUtils";
 // eslint-disable-next-line import/no-unresolved
-import CameraWorker from "worker-loader!./components/CameraWorker";
+import Worker from "worker-loader!./components/Worker";
+
+// camera thread
+let cameraWorker: Worker | null = null;
+
+// mic thread
+let audioInterval: NodeJS.Timer | undefined = undefined;
+let audioContext: AudioContext | undefined = undefined;
+const triggerLock = 5000; // trigger is locked for 5ms once triggered
 
 export default function MainPage() {
   // settings modal
@@ -44,14 +52,6 @@ export default function MainPage() {
   const [calibrateStarted, setCalibrateStarted] = useState(false);
   const [shootStarted, setShootStarted] = useState(false);
 
-  // camera thread
-  let cameraWorker: CameraWorker | null = null;
-  
-  // mic thread
-  let audioInterval: NodeJS.Timer | undefined = undefined;
-  let audioContext: AudioContext | undefined = undefined;
-  const triggerLock = 5000; // trigger is locked for 5ms once triggered
-
   // user options
   const [cameraId, setCameraId] = useState(-1);
   const [micId, setMicId] = useState("");
@@ -71,6 +71,13 @@ export default function MainPage() {
     boxShadow: 24,
     p: 4,
   };
+
+  useEffect(() => {
+    // start camera worker
+    cameraWorker = new Worker();
+    cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
+    return () => cameraWorker?.terminate();
+  }, []);
 
   const handleTest = () => {
     const allTestShots = genRandomShots(8);
@@ -145,15 +152,14 @@ export default function MainPage() {
   }, []);
 
   const startWebcam = () => {
+    if (!cameraWorker) {
+      return;
+    }
     // start & send start signal to worker process
-    cameraWorker = new CameraWorker();
-    cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
     cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "CALIBRATE", testTriggers: [] });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cameraWorker.onmessage = (event) => {
-      if (event.data.cmd == "STOPPED_CAMERA") {
-        cameraWorker?.terminate();
-      } else if (event.data.cmd == "CALIBRATION_FINISHED") {
+      if (event.data.cmd == "CALIBRATION_FINISHED") {
         if (event.data.success) {
           console.log(event.data.calibratePoint);
           setCalibratePoint(event.data.calibratePoint);
@@ -173,8 +179,8 @@ export default function MainPage() {
     // send stop signal to worker process
     if (cameraWorker != null) {
       cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
+      cameraWorker.onmessage = null;
     }
-    cameraWorker = null;
   }
 
   const startMic = async () => {
@@ -199,7 +205,6 @@ export default function MainPage() {
     const intervalMs = 1000 / fps;
 
     let lastTrigger = -1;
-    const myCameraWorker = cameraWorker;
     audioInterval = setInterval(() => {
         // get data from audio stream
         const volumes = new Uint8Array(analyser.frequencyBinCount);
@@ -214,8 +219,8 @@ export default function MainPage() {
         const volume = volumeSum / volumes.length / 127;
         const triggerLocked = lastTrigger >= 0 && (currTime - lastTrigger) <= triggerLock;
         if (volume > micThresh && !triggerLocked) {
-          if (myCameraWorker) {
-            myCameraWorker.postMessage( { cmd: "TRIGGER", time: currTime });
+          if (cameraWorker) {
+            cameraWorker.postMessage( { cmd: "TRIGGER", time: currTime });
           }
           lastTrigger = currTime;
         }
@@ -235,11 +240,6 @@ export default function MainPage() {
   }
 
   const calibrateClick = () => {
-    if (cameraId == -1 || micId == "") {
-      handleAVSBOpen();
-      return;
-    }
-
     if (calibrateStarted) {
       stopWebcam();
       stopMic();
@@ -247,6 +247,10 @@ export default function MainPage() {
       setCalibrationError("Calibration stopped by user");
       handleCalibrationSBOpen();
     } else {
+      if (cameraId == -1 || micId == "") {
+        handleAVSBOpen();
+        return;
+      }
       startWebcam();
       startMic();
       setCalibrateStarted(true);
@@ -297,7 +301,8 @@ export default function MainPage() {
                 setMicId={setMicId}
                 setCameraThreshs={setCameraThreshs}
                 setMicThresh={setMicThresh}
-                setCameraUpDownDetection={setCameraUpDownDetection} />
+                setCameraUpDownDetection={setCameraUpDownDetection}
+                cameraWorker={cameraWorker} />
             </Box>
           </Modal>
           <Button color={calibrateStarted ? "info" : "inherit"} onClick={calibrateClick}>{calibrateStarted ? "CALIBRATING" : "CALIBRATE" }</Button>
