@@ -57,16 +57,17 @@ const circleNumbers = [
 
 export const Target = ({
   shots,
-  shot,
+  shotPoint,
   newBefore,
   newAfter,
+  canvasRef,
 }: {
   shots: Shot[];
-  shot: Shot | undefined;
+  shotPoint: [number, number] | undefined;
   newBefore: [number, number] | undefined;
   newAfter: [number, number] | undefined;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [prevBefore, setPrevBefore] = useState<[number, number]>();
   const [prevAfter, setPrevAfter] = useState<[number, number]>();
 
@@ -188,10 +189,10 @@ export const Target = ({
             />
           );
         })}
-        {shot ? (
+        {shotPoint ? (
           <circle
-            cx={`${translateX(shot.x)}%`}
-            cy={`${translateY(shot.y)}%`}
+            cx={`${translateX(shotPoint[0])}%`}
+            cy={`${translateY(shotPoint[1])}%`}
             fill="#ff1493"
             r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
             stroke="#ffffff"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -11,7 +11,7 @@ import ScoreStatCard from "./components/ScoreStatCard";
 import { Target, ZoomedTarget } from "./components/Target";
 import ShotTable from "./components/ShotTable";
 import LineChart from "./components/LineChart";
-import { defaultCalibratePoint, genRandomShots, Shot, TracePoint } from "../ShotUtils";
+import { defaultCalibratePoint, genRandomShots, Shot, TracePoint, updateShot } from "../ShotUtils";
 // eslint-disable-next-line import/no-unresolved
 import Worker from "worker-loader!./components/Worker";
 
@@ -41,10 +41,12 @@ export default function MainPage() {
   const handleAVSBClose = () => setAVSBOpen(false);
 
   // target and zoomed target
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [shots, setShots] = useState<Shot[]>([]);
   const [shotGroups, setShotGroups] = useState<Shot[][]>([]);
   const [allShots, setAllShots] = useState<Shot[]>([]);
   const [shot, setShot] = useState<Shot>();
+  const [shotPoint, setShotPoint] = useState<[number, number]>();
   const [beforeTrace, setBeforeTrace] = useState<[number, number]>();
   const [afterTrace, setAfterTrace] = useState<[number, number]>();
 
@@ -76,6 +78,7 @@ export default function MainPage() {
     // start camera worker
     cameraWorker = new Worker();
     cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
+    cameraWorker.postMessage({ cmd: "SET_UPDOWN", upDown: cameraUpDownDetection });
     return () => cameraWorker?.terminate();
   }, []);
 
@@ -100,7 +103,7 @@ export default function MainPage() {
     // add test shots to shot group as well to check zoomed
     testShotGroups.push(testShots);
 
-    setShot(allTestShots[allTestShots.length - 1]);
+    setShotPoint([allTestShots[allTestShots.length - 1].x, allTestShots[allTestShots.length - 1].y]);
     setShots(testShots.reverse());
     setShotGroups(testShotGroups.reverse());
     setAllShots(allTestShots.reverse());
@@ -151,12 +154,13 @@ export default function MainPage() {
     chooseDefaultCameraAndMic();
   }, []);
 
-  const startWebcam = () => {
+  const startCalibrateWebcam = () => {
     if (!cameraWorker) {
       return;
     }
-    // start & send start signal to worker process
-    cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "CALIBRATE", testTriggers: [] });
+    // send start signal to worker process
+    cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
+    cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "CALIBRATE" });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cameraWorker.onmessage = (event) => {
       if (event.data.cmd == "CALIBRATION_FINISHED") {
@@ -171,6 +175,51 @@ export default function MainPage() {
         stopMic();
         setCalibrateStarted(false);
         handleCalibrationSBOpen();
+      }
+    };
+  }
+
+  const startShootWebcam = () => {
+    if (!cameraWorker) {
+      return;
+    }
+    // send start signal to worker process
+    cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
+    cameraWorker.postMessage({ cmd: "SET_UPDOWN", upDown: cameraUpDownDetection });
+    cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "SHOOT" });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    cameraWorker.onmessage = (event) => {
+      if (event.data.cmd == "CLEAR_TRACE") {
+        if (canvasRef.current) {
+          const context = canvasRef.current.getContext('2d');
+          if (context) {
+            context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          }
+        }
+      } else if (event.data.cmd == "ADD_BEFORE") {
+        setBeforeTrace([event.data.center.x, event.data.center.y]);
+      } else if (event.data.cmd == "ADD_AFTER") {
+        setAfterTrace([event.data.center.x, event.data.center.y]);
+      } else if (event.data.cmd == "ADD_SHOT") {
+        setShotPoint([event.data.center.x, event.data.center.y]);
+      } else if (event.data.cmd == "SHOT_FINISHED") {
+        const shotId = shots ? shots[0].id + 1 : 1;
+        if (shotPoint) {
+          const shot: Shot = {
+            id: shotId,
+            score: -1,
+            x: shotPoint[0],
+            y: shotPoint[1],
+            r: -1,
+            angle: -1,
+            direction: "",
+            stab: -1,
+            desc: -1,
+            aim: -1,
+          };
+
+          updateShot(shot, event.data.beforeTrace);
+        }
       }
     };
   }
@@ -251,9 +300,25 @@ export default function MainPage() {
         handleAVSBOpen();
         return;
       }
-      startWebcam();
+      startCalibrateWebcam();
       startMic();
       setCalibrateStarted(true);
+    }
+  }
+
+  const shootClick = () => {
+    if (shootStarted) {
+      stopWebcam();
+      stopMic();
+      setShootStarted(false);
+    } else {
+      if (cameraId == -1 || micId == "") {
+        handleAVSBOpen();
+        return;
+      }
+      startShootWebcam();
+      startMic();
+      setShootStarted(true);
     }
   }
 
@@ -306,7 +371,7 @@ export default function MainPage() {
             </Box>
           </Modal>
           <Button color={calibrateStarted ? "info" : "inherit"} onClick={calibrateClick}>{calibrateStarted ? "CALIBRATING" : "CALIBRATE" }</Button>
-          <Button color="inherit">SHOOT</Button>
+          <Button color={shootStarted ? "info" : "inherit"} onClick={shootClick}>{shootStarted ? "SHOOTING" : "SHOOT"}</Button>
         </Toolbar>
       </AppBar>
       <div
@@ -335,9 +400,10 @@ export default function MainPage() {
           >
             <Target
               shots={shots}
-              shot={shot}
+              shotPoint={shotPoint}
               newBefore={beforeTrace}
               newAfter={afterTrace}
+              canvasRef={canvasRef}
             />
           </div>
           <div style={{ flex: "20%", display: "flex" }}>

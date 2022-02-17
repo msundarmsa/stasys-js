@@ -80,6 +80,12 @@ const updatePolar = (shot: Shot) => {
   updateDirection(shot);
 };
 
+export const updateShot = (shot: Shot, beforeTrace: TracePoint[]) => {
+  updateScore(shot);
+  updatePolar(shot);
+  updateScoreStats(beforeTrace, shot);
+}
+
 export const genRandomShots = (n: number): Shot[] => {
   const shots: Shot[] = [];
   for (let i = 0; i < n; i++) {

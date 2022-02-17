@@ -83,7 +83,11 @@ const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection, camer
       cmd: "SET_SHOW_CIRCLE",
       showCircle: showCircle,
     });
-    cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: deviceIndex, mode: "DISPLAY", testTriggers: [] });
+    cameraWorker.postMessage({
+      cmd: "SET_UPDOWN",
+      showCircle: upDownDetection,
+    });
+    cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: deviceIndex, mode: "DISPLAY" });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cameraWorker.onmessage = (event) => {
       if (event.data.cmd == "GRABBED_FRAME") {
@@ -123,6 +127,14 @@ const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection, camer
       cameraWorker.postMessage({ cmd: "SET_SHOW_CIRCLE", showCircle: show });
     }
     setShowCircle(show);
+  };
+
+  const upDownDetectionChanged = (upDown: boolean) => {
+    if (cameraWorker) {
+      cameraWorker.postMessage({ cmd: "SET_UPDOWN", upDown: upDown });
+    }
+    setUpDownDetection(upDown);
+    setCameraUpDownDetection(upDown);
   };
 
   return (
@@ -240,10 +252,7 @@ const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection, camer
             <Checkbox
               aria-label="upDownDetection"
               checked={upDownDetection}
-              onChange={(_1, checked) => {
-                setUpDownDetection(checked);
-                setCameraUpDownDetection(checked);
-              }}
+              onChange={(_1, checked) => upDownDetectionChanged(checked)}
             />
           }
           label="Up/Down Detection"
