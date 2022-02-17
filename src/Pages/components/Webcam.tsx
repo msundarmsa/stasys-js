@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { useState, useRef, useEffect } from "react";
 // eslint-disable-next-line import/no-unresolved
-import Worker from "worker-loader!./Worker";
+import CameraWorker from "worker-loader!./CameraWorker";
 
 const Webcam = () => {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
@@ -27,7 +27,7 @@ const Webcam = () => {
   const [threshs, setThreshs] = useState([120, 150]);
   const [showCircle, setShowCircle] = useState(false);
   const [showThreshs, setShowThreshs] = useState(false);
-  const [cameraWorker, setCameraWorker] = useState<Worker | null>(null);
+  const [cameraWorker, setCameraWorker] = useState<CameraWorker | null>(null);
 
   const closeWebcams = () => {
     setAnchorEl(null);
@@ -43,7 +43,7 @@ const Webcam = () => {
   }, []);
 
   const stopWebcam = () => {
-    // send stop signal to main process
+    // send stop signal to worker process
     if (cameraWorker != null) {
       cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
     }
@@ -69,9 +69,9 @@ const Webcam = () => {
       },
     });
 
-    // send start signal to main process
+    // start & send start signal to worker process
     const deviceIndex = devices.indexOf(device);
-    const myCameraWorker = new Worker();
+    const myCameraWorker = new CameraWorker();
     myCameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: threshs });
     myCameraWorker.postMessage({
       cmd: "SET_SHOW_THRESH",
@@ -81,7 +81,7 @@ const Webcam = () => {
       cmd: "SET_SHOW_CIRCLE",
       showCircle: showCircle,
     });
-    myCameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: deviceIndex });
+    myCameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: deviceIndex, mode: "DISPLAY", testTriggers: [] });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     myCameraWorker.onmessage = (event) => {
       if (event.data.cmd == "STOPPED_CAMERA") {

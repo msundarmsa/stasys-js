@@ -4,20 +4,27 @@ import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import { IconButton, List, ListItem, Modal } from "@mui/material";
+import { Alert, IconButton, List, ListItem, Modal, Snackbar } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SettingsPage from "./SettingsPage";
 import ScoreStatCard from "./components/ScoreStatCard";
 import { Target, ZoomedTarget } from "./components/Target";
 import ShotTable from "./components/ShotTable";
 import LineChart from "./components/LineChart";
-import { genRandomShots, Shot } from "../ShotUtils";
+import { defaultCalibratePoint, genRandomShots, Shot, TracePoint } from "../ShotUtils";
+// eslint-disable-next-line import/no-unresolved
+import CameraWorker from "worker-loader!./components/CameraWorker";
 
 export default function MainPage() {
   // settings modal
-  const [open, setOpen] = useState(false);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const [settingsPageOpen, setSettingsPageOpen] = useState(false);
+  const handleSettingsPageOpen = () => setSettingsPageOpen(true);
+  const handleSettingPageClose = () => setSettingsPageOpen(false);
+
+  const [calibrationSBOpen, setCalibrationSBOpen] = useState(false);
+  const handleCalibrationSBOpen = () => setCalibrationSBOpen(true);
+  const handleCalibrationSBClose = () => setCalibrationSBOpen(false);
+  const [calibrationError, setCalibrationError] = useState("");
 
   const [shots, setShots] = useState<Shot[]>([]);
   const [shotGroups, setShotGroups] = useState<Shot[][]>([]);
@@ -25,6 +32,12 @@ export default function MainPage() {
   const [shot, setShot] = useState<Shot>();
   const [beforeTrace, setBeforeTrace] = useState<[number, number]>();
   const [afterTrace, setAfterTrace] = useState<[number, number]>();
+  const [calibrateStarted, setCalibrateStarted] = useState(false);
+  const [shootStarted, setShootStarted] = useState(false);
+  const [cameraWorker, setCameraWorker] = useState<CameraWorker | null>(null);
+  const [cameraId, setCameraId] = useState(0);
+  const [threshs, setThreshs] = useState([120, 150]);
+  const [calibratePoint, setCalibratePoint] = useState<TracePoint>(defaultCalibratePoint());
 
   const style = {
     position: "absolute",
@@ -63,7 +76,59 @@ export default function MainPage() {
     setShots(testShots.reverse());
     setShotGroups(testShotGroups.reverse());
     setAllShots(allTestShots.reverse());
+
+    setCalibrationError("No detected circle for 1min");
+    handleCalibrationSBOpen();
   };
+
+  const stopWebcam = () => {
+    // send stop signal to worker process
+    if (cameraWorker != null) {
+      cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
+    }
+    setCameraWorker(null);
+  }
+
+  const startCalibrate = () => {
+    // start & send start signal to worker process
+    const myCameraWorker = new CameraWorker();
+    myCameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: threshs });
+    myCameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "CALIBRATE", testTriggers: [500] });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    myCameraWorker.onmessage = (event) => {
+      if (event.data.cmd == "STOPPED_CAMERA") {
+        myCameraWorker.terminate();
+      } else if (event.data.cmd == "CALIBRATION_FINISHED") {
+        if (event.data.success) {
+          console.log(event.data.calibratePoint);
+          setCalibratePoint(event.data.calibratePoint);
+          setCalibrationError("");
+        } else {
+          setCalibrationError(event.data.errorMsg);
+        }
+        stopWebcam();
+        setCalibrateStarted(false);
+        handleCalibrationSBOpen();
+      }
+    };
+    setCameraWorker(myCameraWorker);
+    setCalibrateStarted(true);
+  }
+
+  const stopCalibrate = () => {
+    stopWebcam();
+    setCalibrateStarted(false);
+    setCalibrationError("Calibration stopped by user");
+    handleCalibrationSBOpen();
+  }
+
+  const calibrateClick = () => {
+    if (calibrateStarted) {
+      stopCalibrate();
+    } else {
+      startCalibrate();
+    }
+  }
 
   return (
     <div
@@ -93,13 +158,13 @@ export default function MainPage() {
             size="large"
             edge="start"
             color="inherit"
-            onClick={handleOpen}
+            onClick={handleSettingsPageOpen}
           >
             <SettingsIcon />
           </IconButton>
           <Modal
-            open={open}
-            onClose={handleClose}
+            open={settingsPageOpen}
+            onClose={handleSettingPageClose}
             aria-labelledby="modal-modal-title"
             aria-describedby="modal-modal-description"
           >
@@ -107,7 +172,7 @@ export default function MainPage() {
               <SettingsPage />
             </Box>
           </Modal>
-          <Button color="inherit">CALIBRATE</Button>
+          <Button color={calibrateStarted ? "info" : "inherit"} onClick={calibrateClick}>{calibrateStarted ? "CALIBRATING" : "CALIBRATE" }</Button>
           <Button color="inherit">SHOOT</Button>
         </Toolbar>
       </AppBar>
@@ -217,6 +282,11 @@ export default function MainPage() {
           </div>
         </div>
       </div>
+      <Snackbar open={calibrationSBOpen} autoHideDuration={10000} onClose={handleCalibrationSBClose}>
+        <Alert onClose={handleCalibrationSBClose} severity={calibrationError == "" ? "success" : "error"} sx={{ width: '100%' }}>
+          {calibrationError == "" ? "Calibration finished!" : "Calibration failed: " + calibrationError}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
