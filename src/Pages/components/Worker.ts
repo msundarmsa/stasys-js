@@ -508,7 +508,7 @@ const detectCircles = (frame: cv.Mat): cv.KeyPoint[] => {
 
 const cropFrame = (frame: cv.Mat): cv.Mat => {
   // clip 1.75x size of card around aim center
-  let width = (1.75 * TARGET_SIZE) / RATIO1;
+  let width = Math.floor((1.75 * TARGET_SIZE) / RATIO1);
   let height = width;
   let x = calibratePoint.x - width / 2;
   let y = calibratePoint.y - height / 2;
@@ -519,9 +519,9 @@ const cropFrame = (frame: cv.Mat): cv.Mat => {
   width = x + width > frame.cols ? frame.cols - x : width;
   height = y + height > frame.rows ? frame.rows - y : height;
 
-  const croppedFrame = new cv.Mat(width, height, frame.type);
+  const croppedFrame = new cv.Mat(height, width, frame.type);
   for (let i = x; i < x + width; i++) {
-    for (let j = y; j < y + height; y++) {
+    for (let j = y; j < y + height; j++) {
       croppedFrame.set(j - y, i - x, frame.at(j, i));
     }
   }

@@ -186,6 +186,7 @@ export default function MainPage() {
     // send start signal to worker process
     cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
     cameraWorker.postMessage({ cmd: "SET_UPDOWN", upDown: cameraUpDownDetection });
+    cameraWorker.postMessage({ cmd: "SET_CALIBRATE_POINT", calibratePoint: calibratePoint });
     cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "SHOOT" });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cameraWorker.onmessage = (event) => {
@@ -203,7 +204,7 @@ export default function MainPage() {
       } else if (event.data.cmd == "ADD_SHOT") {
         setShotPoint([event.data.center.x, event.data.center.y]);
       } else if (event.data.cmd == "SHOT_FINISHED") {
-        const shotId = shots ? shots[0].id + 1 : 1;
+        const shotId = shots.length > 0 ? shots[0].id + 1 : 1;
         if (shotPoint) {
           const shot: Shot = {
             id: shotId,
