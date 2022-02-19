@@ -185,7 +185,7 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
           justifyContent: "center",
         }}
       >
-        <LineChart data={data} refLevel={refLevel} name="micplot" />
+        <LineChart lines={data.length == 0 ? [] : [data]} refLevel={refLevel} name="micplot" />
       </Box>
       <Stack spacing={2} direction="row" sx={{ mb: 1 }} alignItems="center">
         <Typography textAlign="center" variant="body1">

@@ -128,7 +128,7 @@ ctx.onmessage = (event) => {
   } else if (event.data.cmd == "SET_FINE_ADJUST") {
     fineAdjust = event.data.fineAdjust;
   } else if (event.data.cmd == "GET_PARAMS") {
-    ctx.postMessage({ cmd: "PARAMS", threshs, upDown, detectCircle: showCircle, showThreshs });
+    ctx.postMessage({ cmd: "PARAMS", threshs, upDown, showCircle: showCircle, showThreshs });
   }
 };
 
@@ -276,6 +276,7 @@ const grabFrame = (frame: cv.Mat): boolean => {
             cmd: "SHOT_FINISHED",
             beforeTrace: beforeTrace,
             afterTrace: afterTrace,
+            shotTime: shotPoint.time
           });
 
           // reset shot

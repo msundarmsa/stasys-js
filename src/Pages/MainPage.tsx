@@ -56,6 +56,7 @@ export default function MainPage() {
   const [shotPoint, setShotPoint] = useState<[number, number]>();
   const [beforeTrace, setBeforeTrace] = useState<[number, number]>();
   const [afterTrace, setAfterTrace] = useState<[number, number]>();
+  const [data, setData] = useState<{x: number, y: number}[][]>([]);
 
   // buttons
   const [calibrateStarted, setCalibrateStarted] = useState(false);
@@ -189,7 +190,6 @@ export default function MainPage() {
     if (!cameraWorker) {
       return;
     }
-    console.groupCollapsed();
     // send start signal to worker process
     cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "SHOOT" });
     let currShotPoint = shotPoint;
@@ -216,7 +216,7 @@ export default function MainPage() {
         }
       } else if (event.data.cmd == "SHOT_FINISHED") {
         const shotId = shots.length > 0 ? shots[0].id + 1 : 1;
-        console.log({ "data": event.data, currShotPoint });
+        console.log({ data: event.data, currShotPoint });
         if (currShotPoint) {
           const shot: Shot = {
             id: shotId,
@@ -238,6 +238,45 @@ export default function MainPage() {
           setAllShots(currAllShots);
           setShot(shot);
           setShots(currShots);
+
+          // cut the traces from +-0.5s (500ms) around shot
+          const xData: {x: number, y: number}[] = [];
+          const yData: {x: number, y: number}[] = [];
+          let idx = event.data.beforeTrace.length - 1;
+          while (idx >= 0) {
+            const currTP = event.data.beforeTrace[idx];
+            if (event.data.shotTime - currTP.time > 500) {
+              break;
+            }
+
+            const currTime = (currTP.time - event.data.shotTime) / 1000;
+            const currX = event.data.beforeTrace[idx].x;
+            const currY = event.data.beforeTrace[idx].y;
+            xData.push({x: currTime, y: currX});
+            yData.push({x: currTime, y: currY});
+
+            idx -= 1;
+          }
+          xData.reverse();
+          yData.reverse();
+          idx = 0;
+          while (idx <= event.data.afterTrace.length - 1) {
+            const currTP = event.data.afterTrace[idx];
+            if (currTP.time - event.data.shotTime > 500) {
+              break;
+            }
+
+            const currTime = (currTP.time - event.data.shotTime) / 1000;
+            const currX = event.data.afterTrace[idx].x;
+            const currY = event.data.afterTrace[idx].y;
+            xData.push({x: currTime, y: currX});
+            yData.push({x: currTime, y: currY});
+
+            idx += 1;
+          }
+
+          console.log({ xData, yData })
+          setData([xData, yData]);
         }
       }
     };
@@ -249,7 +288,6 @@ export default function MainPage() {
       cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
       cameraWorker.onmessage = null;
     }
-    console.groupEnd();
   }
 
   const startMic = async () => {
@@ -498,7 +536,7 @@ export default function MainPage() {
             }}
           >
             <LineChart
-              data={[]}
+              lines={data}
               xMin={-0.5}
               xMax={0.5}
               yMin={-40}
@@ -506,6 +544,7 @@ export default function MainPage() {
               yAxisLabel="displacement (mm)"
               xAxisLoc="middle"
               name="shotplot"
+              zeroLine
             />
           </div>
         </div>

@@ -1,8 +1,17 @@
 import { axisLeft, axisBottom, scaleLinear, select, line as d3Line } from "d3";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const colors = ["#ff6e00", "#aacd00", "#0075e6", "#635273"];
+// set margin around element to prevent clipping of axes
+const MARGINS = {
+  top: 30,
+  right: 20,
+  bottom: 30,
+  left: 75,
+};
 
 const LineChart = ({
-  data,
+  lines,
   refLevel,
   xMin,
   xMax,
@@ -11,9 +20,11 @@ const LineChart = ({
   xAxisLoc,
   yAxisLabel,
   name,
+  zeroLine,
 }: IProps) => {
-  const [firstRender, setFirstRender] = useState(true);
   const svgElem = useRef<SVGSVGElement>(null);
+  const [initialRender, setInitialRender] = useState(true);
+  const [firstRender, setFirstRender] = useState(true);
 
   useEffect(() => {
     if (!svgElem.current) {
@@ -29,9 +40,9 @@ const LineChart = ({
     if (xMax) {
       maxX = xMax;
     }
-    if (data.length > 0) {
-      const newMinX = data[0].x;
-      const newMaxX = data[data.length - 1].x;
+    if (lines.length > 0) {
+      const newMinX = lines[0][0].x;
+      const newMaxX = lines[0][lines[0].length - 1].x;
       // only update range after first 5s of data is collected
       if (newMaxX > maxX) {
         minX = newMinX;
@@ -51,26 +62,6 @@ const LineChart = ({
     const height = svgElem.current.clientHeight;
     const width = svgElem.current.clientWidth;
 
-    // set margin around element to prevent clipping of axes
-    const MARGINS = {
-      top: 30,
-      right: 20,
-      bottom: 30,
-      left: 75,
-    };
-
-    if (firstRender) {
-      // add placeholder for axes
-      select(`.line-chart-${name}`).append("g").attr("class", `line-chart-${name}-yaxis`);
-      select(`.line-chart-${name}`).append("g").attr("class", `line-chart-${name}-xaxis`);
-
-      // add placeholder for lines
-      select(`.line-chart-${name}`).append("path").attr("class", `line-chart-${name}-line`);
-      select(`.line-chart-${name}`).append("path").attr("class", `line-chart-${name}-ref-line`);
-
-      setFirstRender(false);
-    }
-
     // map x range and y range to width and height respectively
     const xScale = scaleLinear()
       .domain([minX, maxX])
@@ -78,6 +69,24 @@ const LineChart = ({
     const yScale = scaleLinear()
       .domain([minY, maxY])
       .range([height - MARGINS.top, MARGINS.bottom]);
+
+    if (initialRender) {
+      // add placeholder for axes
+      select(`.line-chart-${name}`).append("g").attr("class", `line-chart-${name}-yaxis`);
+      select(`.line-chart-${name}`).append("g").attr("class", `line-chart-${name}-xaxis`);
+
+      setInitialRender(false);
+    }
+
+    if (lines.length > 0 && firstRender) {
+      // add placeholder for lines
+      for (let i = 0; i < lines.length; i++) {
+        select(`.line-chart-${name}`).append("path").attr("class", `line-chart-${name}-line-${i}`);
+      }
+      select(`.line-chart-${name}`).append("path").attr("class", `line-chart-${name}-ref-line`);
+
+      setFirstRender(false);
+    }
 
     // create axes
     const yAxis = axisLeft(yScale).ticks(5);
@@ -123,15 +132,17 @@ const LineChart = ({
       // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
       .y((point) => yScale(point.y));
 
-    select(`.line-chart-${name}-line`)
-      // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
-      .attr("d", line(data))
-      .attr("fill", "none")
-      .attr("stroke", "#0071dd")
-      .attr("stroke-width", 1.5);
-    
+    for (let i = 0; i < lines.length; i++) {
+      select(`.line-chart-${name}-line-${i}`)
+        // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
+        .attr("d", line(lines[i]))
+        .attr("fill", "none")
+        .attr("stroke", colors[i])
+        .attr("stroke-width", 1.5);
+    }
+
     // draw ref line
-    if (refLevel) {
+    if (refLevel != undefined && lines.length > 0) {
       const refLine = d3Line()
         // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
         .x((point) => xScale(point.x))
@@ -140,25 +151,27 @@ const LineChart = ({
 
       select(`.line-chart-${name}-ref-line`)
         // @ts-expect-error: expect errors here due to inconsistencies in @types/d3
-        .attr("d", refLine(data))
+        .attr("d", refLine(lines[0]))
         .attr("fill", "none")
-        .attr("stroke", "#755f89")
+        .attr("stroke", colors[lines.length])
         .attr("stroke-width", 1.5);
     }
-  }, [firstRender, data, refLevel, svgElem]);
+
+  }, [lines, refLevel]);
 
   return (
     <svg
       ref={svgElem}
       className={`line-chart-${name}`}
       width="100%"
-      style={{ aspectRatio: "1280/720" }}
-    />
+      style={{ aspectRatio: "1280/720" }}>
+      <line x1="50%" y1="0%" x2="50%" y2="100%" stroke={colors[colors.length - 1]} transform={`translate(${(MARGINS.left - MARGINS.right) / 2}, 0)`}/>
+    </svg>
   );
 };
 
 interface IProps {
-  data: { x: number; y: number }[];
+  lines: { x: number; y: number }[][];
   refLevel?: number;
   xMin?: number;
   xMax?: number;
@@ -167,6 +180,7 @@ interface IProps {
   xAxisLoc?: string;
   yAxisLabel?: string;
   name: string;
+  zeroLine?: boolean;
 }
 
 export default LineChart;
