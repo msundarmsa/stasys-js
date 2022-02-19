@@ -5,8 +5,8 @@
   "description": "STASYS",
   "main": ".webpack/main",
   "scripts": {
-    "start": "cross-env ELECTRON_ENV=DEV electron-forge start",
-    "package": "cross-env ELECTRON_ENV=PROD electron-forge package && ./patch_scripts/worker_patch.sh",
+    "start": "cross-env ELECTRON_DEV=TRUE electron-forge start --enable-logging",
+    "package": "electron-forge package && ./patch_scripts/worker_patch.sh",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx . --fix"

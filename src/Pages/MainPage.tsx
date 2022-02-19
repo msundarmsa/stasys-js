@@ -4,7 +4,7 @@ import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import { Alert, IconButton, List, ListItem, Modal, Snackbar } from "@mui/material";
+import { Alert, AlertColor, IconButton, List, ListItem, Modal, Snackbar } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SettingsPage from "./SettingsPage";
 import ScoreStatCard from "./components/ScoreStatCard";
@@ -35,10 +35,17 @@ export default function MainPage() {
   const handleCalibrationSBClose = () => setCalibrationSBOpen(false);
   const [calibrationError, setCalibrationError] = useState("");
 
-  // audio video snack bar
-  const [avSBOpen, setAVSBOpen] = useState(false);
-  const handleAVSBOpen = () => setAVSBOpen(true);
-  const handleAVSBClose = () => setAVSBOpen(false);
+  // toasts
+  const [toastOpen, setToastOpen] = useState(false);
+  const handleToastOpen = () => setToastOpen(true);
+  const handleToastClose = () => setToastOpen(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastSeverity, setToastSeverity] = useState<AlertColor>("info");
+  const showToast = (severity: AlertColor, msg: string) => {
+    setToastMsg(msg);
+    setToastSeverity(severity);
+    handleToastOpen();
+  };
 
   // target and zoomed target
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -57,7 +64,7 @@ export default function MainPage() {
   // user options
   const [cameraId, setCameraId] = useState(-1);
   const [micId, setMicId] = useState("");
-  const [cameraUpDownDetection, setCameraUpDownDetection] = useState(true);
+  const [cameraUpDownDetection, setCameraUpDownDetection] = useState(false);
   const [cameraThreshs, setCameraThreshs] = useState<number[]>([120, 150]);
   const [micThresh, setMicThresh] = useState(0.7);
   const [calibratePoint, setCalibratePoint] = useState<TracePoint>(defaultCalibratePoint());
@@ -83,7 +90,7 @@ export default function MainPage() {
   }, []);
 
   const handleTest = () => {
-    const allTestShots = genRandomShots(8);
+    const allTestShots = genRandomShots(19);
     const testShotGroups: Shot[][] = [];
     let currIdx = 0;
     while (currIdx + 10 < allTestShots.length) {
@@ -96,7 +103,7 @@ export default function MainPage() {
     }
 
     const testShots: Shot[] = [];
-    for (let i = currIdx; i < allTestShots.length - 1; i++) {
+    for (let i = currIdx; i < allTestShots.length; i++) {
       testShots.push(allTestShots[i]);
     }
 
@@ -107,9 +114,7 @@ export default function MainPage() {
     setShots(testShots.reverse());
     setShotGroups(testShotGroups.reverse());
     setAllShots(allTestShots.reverse());
-
-    setCalibrationError("No detected circle for 1min");
-    handleCalibrationSBOpen();
+    setShot(testShots[testShots.length - 1]);
   };
 
   async function chooseDefaultCameraAndMic() {
@@ -146,7 +151,7 @@ export default function MainPage() {
     if ((!user_chose_video && !usbVideoExists) || (!user_chose_audio && !usbAudioExists)) {
       setCameraId(firstCameraId);
       setMicId(firstMicId);
-      handleAVSBOpen();
+      showToast("info", "Could not find USB camera/mic. Chosen first available camera/mic. If you would like to change this please go to settings dialog and manually select the camera and microphone.")
     }
   }
 
@@ -165,7 +170,6 @@ export default function MainPage() {
     cameraWorker.onmessage = (event) => {
       if (event.data.cmd == "CALIBRATION_FINISHED") {
         if (event.data.success) {
-          console.log(event.data.calibratePoint);
           setCalibratePoint(event.data.calibratePoint);
           setCalibrationError("");
         } else {
@@ -179,38 +183,56 @@ export default function MainPage() {
     };
   }
 
+  const clearTrace = () => {
+    if (canvasRef.current) {
+      const context = canvasRef.current.getContext('2d');
+      if (context) {
+        context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+    }
+  };
+
   const startShootWebcam = () => {
     if (!cameraWorker) {
       return;
     }
+    console.groupCollapsed();
     // send start signal to worker process
     cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
     cameraWorker.postMessage({ cmd: "SET_UPDOWN", upDown: cameraUpDownDetection });
     cameraWorker.postMessage({ cmd: "SET_CALIBRATE_POINT", calibratePoint: calibratePoint });
     cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "SHOOT" });
+    let currShotPoint = shotPoint;
+    let currShots = shots;
+    let currAllShots = allShots;
+    let currShotGroups = shotGroups;
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cameraWorker.onmessage = (event) => {
       if (event.data.cmd == "CLEAR_TRACE") {
-        if (canvasRef.current) {
-          const context = canvasRef.current.getContext('2d');
-          if (context) {
-            context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          }
-        }
+        clearTrace();
       } else if (event.data.cmd == "ADD_BEFORE") {
         setBeforeTrace([event.data.center.x, event.data.center.y]);
       } else if (event.data.cmd == "ADD_AFTER") {
         setAfterTrace([event.data.center.x, event.data.center.y]);
       } else if (event.data.cmd == "ADD_SHOT") {
-        setShotPoint([event.data.center.x, event.data.center.y]);
+        currShotPoint = [event.data.center.x, event.data.center.y];
+        setShotPoint(currShotPoint);
+        if (currShots.length == 10) {
+          currShotGroups = [currShots, ...shotGroups];
+          currShots = [];
+          setShotGroups(currShotGroups);
+          setShots(currShots);
+        }
       } else if (event.data.cmd == "SHOT_FINISHED") {
         const shotId = shots.length > 0 ? shots[0].id + 1 : 1;
-        if (shotPoint) {
+        console.log({ "data": event.data, currShotPoint });
+        if (currShotPoint) {
           const shot: Shot = {
             id: shotId,
             score: -1,
-            x: shotPoint[0],
-            y: shotPoint[1],
+            x: currShotPoint[0],
+            y: currShotPoint[1],
             r: -1,
             angle: -1,
             direction: "",
@@ -219,7 +241,13 @@ export default function MainPage() {
             aim: -1,
           };
 
+          currAllShots = [shot, ...currAllShots];
+          currShots = [shot, ...currShots];
+
           updateShot(shot, event.data.beforeTrace);
+          setAllShots(currAllShots);
+          setShot(shot);
+          setShots(currShots);
         }
       }
     };
@@ -231,6 +259,7 @@ export default function MainPage() {
       cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
       cameraWorker.onmessage = null;
     }
+    console.groupEnd();
   }
 
   const startMic = async () => {
@@ -290,6 +319,11 @@ export default function MainPage() {
   }
 
   const calibrateClick = () => {
+    if (shootStarted) {
+      showToast("error", "Please stop shooting before calibrating");
+      return;
+    }
+
     if (calibrateStarted) {
       stopWebcam();
       stopMic();
@@ -298,27 +332,33 @@ export default function MainPage() {
       handleCalibrationSBOpen();
     } else {
       if (cameraId == -1 || micId == "") {
-        handleAVSBOpen();
+        showToast("error", "No camera/mic found!");
         return;
       }
       startCalibrateWebcam();
-      startMic();
+      // startMic();
       setCalibrateStarted(true);
     }
   }
 
   const shootClick = () => {
+    if (calibrateStarted) {
+      showToast("error", "Please wait for calibration to finish");
+      return;
+    }
+
     if (shootStarted) {
       stopWebcam();
       stopMic();
       setShootStarted(false);
+      clearTrace();
     } else {
       if (cameraId == -1 || micId == "") {
-        handleAVSBOpen();
+        showToast("error", "No camera/mic found!");
         return;
       }
       startShootWebcam();
-      startMic();
+      // startMic();
       setShootStarted(true);
     }
   }
@@ -362,7 +402,7 @@ export default function MainPage() {
             aria-describedby="modal-modal-description"
           >
             <Box sx={style}>
-              <SettingsPage 
+              <SettingsPage
                 setCameraId={setCameraId}
                 setMicId={setMicId}
                 setCameraThreshs={setCameraThreshs}
@@ -487,9 +527,9 @@ export default function MainPage() {
           {calibrationError == "" ? "Calibration finished!" : "Calibration failed: " + calibrationError}
         </Alert>
       </Snackbar>
-      <Snackbar open={avSBOpen} autoHideDuration={5000} onClose={handleAVSBClose}>
-        <Alert onClose={handleAVSBClose} severity="info" sx={{ width: '100%' }}>
-          Could not find USB camera/mic. Chosen first available camera/mic. If you would like to change this please go to settings dialog and manually select the camera and microphone.
+      <Snackbar open={toastOpen} autoHideDuration={5000} onClose={handleToastClose}>
+        <Alert onClose={handleToastClose} severity={toastSeverity} sx={{ width: '100%' }}>
+          {toastMsg}
         </Alert>
       </Snackbar>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   PELLET_SIZE,
   SEVEN_RING_SIZE,
@@ -152,6 +152,51 @@ export const Target = ({
 
   return (
     <div style={{ position: "relative", height: "100%" }}>
+      <canvas
+        ref={canvasRef}
+        style={{
+          left: 0,
+          top: 0,
+          zIndex: 3,
+          position: "absolute",
+          height: "100%",
+          width: "100%",
+        }}
+      ></canvas>
+      <svg
+        style={{
+          height: "100%",
+          width: "100%",
+          aspectRatio: "1/1",
+          left: 0,
+          top: 0,
+          zIndex: 3,
+          position: "absolute",
+        }}
+      >
+      {shots.map((shot, _) => {
+        return (
+          <circle
+            cx={`${translateX(shot.x)}%`}
+            cy={`${translateY(shot.y)}%`}
+            fill="#000000"
+            r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
+            stroke="#ffffff"
+            strokeWidth={3}
+          />
+        );
+      })}
+      {shotPoint ? (
+        <circle
+          cx={`${translateX(shotPoint[0])}%`}
+          cy={`${translateY(shotPoint[1])}%`}
+          fill="#ff1493"
+          r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
+          stroke="#ffffff"
+          strokeWidth={3}
+        />
+      ) : null}
+      </svg>
       <svg style={{ height: "100%", width: "100%", aspectRatio: "1/1" }}>
         {circles.map((circle, _) => {
           return (
@@ -177,40 +222,7 @@ export const Target = ({
             </text>
           );
         })}
-        {shots.map((shot, _) => {
-          return (
-            <circle
-              cx={`${translateX(shot.x)}%`}
-              cy={`${translateY(shot.y)}%`}
-              fill="#000000"
-              r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
-              stroke="#ffffff"
-              strokeWidth={3}
-            />
-          );
-        })}
-        {shotPoint ? (
-          <circle
-            cx={`${translateX(shotPoint[0])}%`}
-            cy={`${translateY(shotPoint[1])}%`}
-            fill="#ff1493"
-            r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
-            stroke="#ffffff"
-            strokeWidth={3}
-          />
-        ) : null}
       </svg>
-      <canvas
-        ref={canvasRef}
-        style={{
-          left: 0,
-          top: 0,
-          zIndex: 2,
-          position: "absolute",
-          height: "100%",
-          width: "100%",
-        }}
-      ></canvas>
     </div>
   );
 };

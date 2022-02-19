@@ -61,7 +61,7 @@ let frameId = 0;
 
 // process commands from main thread
 ctx.onmessage = (event) => {
-  console.log(`Received command: ${event.data.cmd}`);
+  console.log(event.data.cmd);
   if (event.data.cmd == "START_CAMERA") {
     if (video != null) {
       // video already started
@@ -72,11 +72,17 @@ ctx.onmessage = (event) => {
     let fps = mode == "SHOOT" ? 120 : 30;
     let cameraId = event.data.cameraId;
 
-    if (process.env.ELECTRON_ENV == "DEV") {
+    if (process.env.ELECTRON_DEV) {
       fps = mode != "DISPLAY" ? 1000 : 30;
-      testTriggers = [312, 1754, 3295, 5116, 6506, 7589, 9914, 11104, 12424, 14422, 15713, 17499, 21796, 23156, 24537, 26312, 27402, 28559, 29944, 31059, 32233, 33654, 34582, 35775, 37593, 38745, 40029, 41795, 43269, 44616];
-      cameraId = "/Users/msundarmsa/stasys/300820/1/shot.mp4";
+      // cameraId = "/Users/msundarmsa/stasys/300820/1/shot.mp4";
+      // testTriggers = [312, 1754, 3295, 5116, 6506, 7589, 9914, 11104, 12424, 14422, 15713, 17499, 21796, 23156, 24537, 26312, 27402, 28559, 29944, 31059, 32233, 33654, 34582, 35775, 37593, 38745, 40029, 41795, 43269, 44616];
+      // cameraId = "/Users/msundarmsa/stasys/220821/720p_120fps_10 shots.mp4";
+      // testTriggers = [3600, 7200, 10560];
+      cameraId = "/Users/msundarmsa/stasys/220821/720p_120fps_2 shots.mp4";
+      testTriggers = [1800, 5400];
     }
+
+    console.log({ mode, threshs, upDown, RATIO1, calibratePoint, fineAdjust });
 
     startCamera(cameraId, fps);
   } else if (event.data.cmd == "STOP_CAMERA") {
@@ -94,8 +100,7 @@ ctx.onmessage = (event) => {
     beforeTrace = [];
     shotPoint = null;
     afterTrace = [];
-    calibratePoint = { x: 0, y: 0, r: 0, time: 0 };
-    fineAdjust = { x: 0, y: 0, r: 0, time: 0 };
+    RATIO1 = 1;
     testTriggers = [];
     frameId = 0;
     video = null;
@@ -183,10 +188,10 @@ const grabFrame = (frame: cv.Mat): boolean => {
   } else if (mode == "CALIBRATE") {
     const keypoints = detectCircles(frame);
     if (keypoints.length != 1) {
-      if (currTime - startTime > 6000) {
+      if (currTime - startTime > 60000) {
         ctx.postMessage({
           cmd: "CALIBRATION_FINISHED",
-          success: "FAIL",
+          success: false,
           errorMsg: "Target was not detecting for 1min",
         });
         return false; // stop grabbing frames
@@ -198,7 +203,7 @@ const grabFrame = (frame: cv.Mat): boolean => {
     if (currTime - startTime > 120000) {
       ctx.postMessage({
         cmd: "CALIBRATION_FINISHED",
-        success: "FAIL",
+        success: false,
         errorMsg: "Calibrating for more than 2mins",
       });
       return false; // stop grabbing frames
@@ -242,7 +247,7 @@ const grabFrame = (frame: cv.Mat): boolean => {
         // for 2s
         shotStarted = false;
         beforeTrace = [];
-        shotPoint = { x: 0, y: 0, r: 0, time: 0 };
+        shotPoint = null;
         afterTrace = [];
         ctx.postMessage({ cmd: "CLEAR_TRACE" });
         // delay_read = 1000 / idle_fps;
@@ -250,7 +255,7 @@ const grabFrame = (frame: cv.Mat): boolean => {
         if (timeSinceShotStart > 60000 && shotPoint == null) {
           // reset trace if shot has started but trigger has not been pulled for 60s
           beforeTrace = [];
-          shotPoint = { x: 0, y: 0, r: 0, time: 0 };
+          shotPoint = null;
           afterTrace = [];
           ctx.postMessage({ cmd: "CLEAR_TRACE" });
 
@@ -260,6 +265,7 @@ const grabFrame = (frame: cv.Mat): boolean => {
           shotPoint != null &&
           timeSinceShotStart >= shotPoint.time + 1000
         ) {
+          console.log("SHOT FINISHED!");
           // 1s after trigger is pulled, shot is finished. create new object for this shot
           // and draw the x-t and y-t graph
           ctx.postMessage({
@@ -271,7 +277,7 @@ const grabFrame = (frame: cv.Mat): boolean => {
           // reset shot
           shotStarted = false;
           beforeTrace = [];
-          shotPoint = { x: 0, y: 0, r: 0, time: 0 };
+          shotPoint = null;
           afterTrace = [];
 
           // delay_read = 1000 / idle_fps;
@@ -330,7 +336,7 @@ const grabFrame = (frame: cv.Mat): boolean => {
           // new shot started
           // reset traces
           beforeTrace = [];
-          shotPoint = { x: 0, y: 0, r: 0, time: 0 };
+          shotPoint = null;
           afterTrace = [];
           preTrace = [];
           ctx.postMessage({ cmd: "CLEAR_TRACE" });
@@ -342,7 +348,7 @@ const grabFrame = (frame: cv.Mat): boolean => {
         }
       } else {
         if (shotPoint == null) {
-          if (triggerTime != 0) {
+          if (triggerTime != -1) {
             // trigger has just been pulled
             if (triggerTime > currTime) {
               // trigger was after frame was taken
@@ -353,13 +359,13 @@ const grabFrame = (frame: cv.Mat): boolean => {
               // trigger was before frame was taken
               // add current position to after trace
               afterTrace.push(center);
+              ctx.postMessage({ cmd: "ADD_AFTER", center: center });
             }
+            shotPoint = center;
           } else {
             beforeTrace.push(center);
             ctx.postMessage({ cmd: "ADD_BEFORE", center: center });
           }
-
-          shotPoint = center;
         } else {
           if (afterTrace.length < 2) {
             afterTrace.push(center);
@@ -381,8 +387,8 @@ const grabFrame = (frame: cv.Mat): boolean => {
               T.push(afterTrace[i].time);
             }
 
-            const sx = new Spline(X, T);
-            const sy = new Spline(Y, T);
+            const sx = new Spline(T, X);
+            const sy = new Spline(T, Y);
 
             const triggerTimeFromShotStart = triggerTime - shotStartTime;
             const interpX = sx.at(triggerTimeFromShotStart);
@@ -395,9 +401,9 @@ const grabFrame = (frame: cv.Mat): boolean => {
               time: triggerTimeFromShotStart,
             };
 
-            ctx.postMessage({ cmd: "ADD_BEFORE", shotPoint });
-            ctx.postMessage({ cmd: "ADD_AFTER", shotPoint });
-            ctx.postMessage({ cmd: "ADD_SHOT", shotPoint });
+            ctx.postMessage({ cmd: "ADD_BEFORE", center: shotPoint });
+            ctx.postMessage({ cmd: "ADD_AFTER", center: shotPoint });
+            ctx.postMessage({ cmd: "ADD_SHOT", center: shotPoint });
 
             triggerTime = -1;
           } else {
@@ -410,7 +416,7 @@ const grabFrame = (frame: cv.Mat): boolean => {
     if (!shotStarted) {
       // eitherways reset triggered value
       // if shot has not been started
-      triggerTime = 0;
+      triggerTime = -1;
     }
   }
 
@@ -455,12 +461,8 @@ const calibrate = (): TracePoint => {
       points.push(currTP);
     } else {
       const duration = points[0].time - currTP.time;
-      if (
-        (duration > 1033 && duration < 1066) ||
-        (i == beforeTrace.length - 1 && duration > 533)
-      ) {
+      if (duration > 1033 && duration < 1066) {
         // there has been 1s worth of data
-        // or 500ms of data and this is the last data point
 
         // calculate average position and radius of detected circle in points
         const avgCircle: TracePoint = { x: 0, y: 0, r: 0, time: 0 };
@@ -519,12 +521,5 @@ const cropFrame = (frame: cv.Mat): cv.Mat => {
   width = x + width > frame.cols ? frame.cols - x : width;
   height = y + height > frame.rows ? frame.rows - y : height;
 
-  const croppedFrame = new cv.Mat(height, width, frame.type);
-  for (let i = x; i < x + width; i++) {
-    for (let j = y; j < y + height; j++) {
-      croppedFrame.set(j - y, i - x, frame.at(j, i));
-    }
-  }
-
-  return croppedFrame;
+  return frame.getRegion(new cv.Rect(x, y, width, height));
 };
