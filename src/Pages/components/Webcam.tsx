@@ -13,21 +13,22 @@ import { useState, useRef, useEffect } from "react";
 // eslint-disable-next-line import/no-unresolved
 import Worker from "worker-loader!./Worker";
 
-const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection, cameraWorker }: IProps) => {
-  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
   // menu
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const openWebcams = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [webcamStarted, setWebcamStarted] = useState(false);
   const [deviceLabel, setDeviceLabel] = useState("");
-  const [threshs, setThreshs] = useState([120, 150]);
+  const [threshs, setThreshs] = useState<number[]>([]);
   const [showCircle, setShowCircle] = useState(false);
   const [showThreshs, setShowThreshs] = useState(false);
-  const [upDownDetection, setUpDownDetection] = useState(true);
+  const [upDownDetection, setUpDownDetection] = useState(false);
 
   const closeWebcams = () => {
     setAnchorEl(null);
@@ -40,12 +41,32 @@ const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection, camer
 
   useEffect(() => {
     getWebcams();
+
+    // get current settings from camera worker
+    if (!cameraWorker) {
+      // TODO: display error message
+      return;
+    }
+    cameraWorker.postMessage({ cmd: 'GET_PARAMS' });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    cameraWorker.onmessage = (event) => {
+      if (event.data.cmd != "PARAMS") {
+        return;
+      }
+
+      setShowCircle(event.data.showCircle);
+      setShowThreshs(event.data.showThreshs);
+      setUpDownDetection(event.data.upDown);
+    }
+
+    return () => stopWebcam();
   }, []);
 
   const stopWebcam = () => {
     // send stop signal to worker process
-    if (cameraWorker != null) {
+    if (cameraWorker) {
       cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
+      cameraWorker.onmessage = null;
     }
     setWebcamStarted(false);
     setDeviceLabel("");
@@ -56,12 +77,19 @@ const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection, camer
       // stop previous webcam if running before starting new one
       stopWebcam();
     }
+
+    if (!cameraWorker) {
+      // TODO: display error message
+      return;
+    }
+
+    // update state
     setWebcamStarted(true);
     setDeviceLabel(device.label);
     setCameraId(devices.indexOf(device));
     closeWebcams();
 
-    // mock create stream to get permission
+    // mock create stream to get permissions in macOS
     await navigator.mediaDevices.getUserMedia({
       audio: false,
       video: {
@@ -69,72 +97,63 @@ const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection, camer
       },
     });
 
-    // start & send start signal to worker process
+    // send start signal to worker process
     const deviceIndex = devices.indexOf(device);
-    if (!cameraWorker) {
-      return;
-    }
-    cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: threshs });
-    cameraWorker.postMessage({
-      cmd: "SET_SHOW_THRESH",
-      showThreshs: showThreshs,
-    });
-    cameraWorker.postMessage({
-      cmd: "SET_SHOW_CIRCLE",
-      showCircle: showCircle,
-    });
-    cameraWorker.postMessage({
-      cmd: "SET_UPDOWN",
-      showCircle: upDownDetection,
-    });
     cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: deviceIndex, mode: "DISPLAY" });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cameraWorker.onmessage = (event) => {
-      if (event.data.cmd == "GRABBED_FRAME") {
-        if (canvasRef.current) {
-          // set canvas dimensions
-          canvasRef.current.height = event.data.height;
-          canvasRef.current.width = event.data.width;
-
-          // set image data
-          const ctx = canvasRef.current.getContext("2d");
-          if (ctx) {
-            ctx.putImageData(event.data.frame, 0, 0);
-          }
-        }
+      if (event.data.cmd != "GRABBED_FRAME" || !canvasRef.current) {
+        return;
       }
+
+      // set canvas dimensions
+      canvasRef.current.height = event.data.height;
+      canvasRef.current.width = event.data.width;
+
+      // set image data on canvas
+      const ctx = canvasRef.current.getContext("2d");
+      ctx?.putImageData(event.data.frame, 0, 0);
     };
   }
 
   const threshsChanged = (newThreshs: number[]) => {
-    if (cameraWorker) {
-      cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: newThreshs });
-      cameraWorker.onmessage = null;
+    if (!cameraWorker) {
+      // TODO: display error message
+      return;
     }
+
+    cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: newThreshs });
     setThreshs(newThreshs);
-    setCameraThreshs(newThreshs);
   };
 
   const showThreshsChanged = (show: boolean) => {
-    if (cameraWorker) {
-      cameraWorker.postMessage({ cmd: "SET_SHOW_THRESHS", showThreshs: show });
+    if (!cameraWorker) {
+      // TODO: display error message
+      return;
     }
+
+    cameraWorker.postMessage({ cmd: "SET_SHOW_THRESHS", showThreshs: show });
     setShowThreshs(show);
   };
 
   const showCircleChanged = (show: boolean) => {
-    if (cameraWorker) {
-      cameraWorker.postMessage({ cmd: "SET_SHOW_CIRCLE", showCircle: show });
+    if (!cameraWorker) {
+      // TODO: display error message
+      return;
     }
+
+    cameraWorker.postMessage({ cmd: "SET_SHOW_CIRCLE", showCircle: show });
     setShowCircle(show);
   };
 
   const upDownDetectionChanged = (upDown: boolean) => {
-    if (cameraWorker) {
-      cameraWorker.postMessage({ cmd: "SET_UPDOWN", upDown: upDown });
+    if (!cameraWorker) {
+      // TODO: display error message
+      return;
     }
+
+    cameraWorker.postMessage({ cmd: "SET_UPDOWN", upDown: upDown });
     setUpDownDetection(upDown);
-    setCameraUpDownDetection(upDown);
   };
 
   return (
@@ -264,8 +283,6 @@ const Webcam = ({ setCameraId, setCameraThreshs, setCameraUpDownDetection, camer
 
 interface IProps {
   setCameraId: (id: number) => void;
-  setCameraThreshs: (threshs: number[]) => void;
-  setCameraUpDownDetection: (upDownDetection: boolean) => void;
   cameraWorker: Worker | null;
 }
 

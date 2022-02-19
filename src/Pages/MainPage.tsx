@@ -11,7 +11,7 @@ import ScoreStatCard from "./components/ScoreStatCard";
 import { Target, ZoomedTarget } from "./components/Target";
 import ShotTable from "./components/ShotTable";
 import LineChart from "./components/LineChart";
-import { defaultCalibratePoint, genRandomShots, Shot, TracePoint, updateShot } from "../ShotUtils";
+import { genRandomShots, Shot, updateShot } from "../ShotUtils";
 // eslint-disable-next-line import/no-unresolved
 import Worker from "worker-loader!./components/Worker";
 
@@ -64,10 +64,7 @@ export default function MainPage() {
   // user options
   const [cameraId, setCameraId] = useState(-1);
   const [micId, setMicId] = useState("");
-  const [cameraUpDownDetection, setCameraUpDownDetection] = useState(false);
-  const [cameraThreshs, setCameraThreshs] = useState<number[]>([120, 150]);
   const [micThresh, setMicThresh] = useState(0.7);
-  const [calibratePoint, setCalibratePoint] = useState<TracePoint>(defaultCalibratePoint());
 
   const style = {
     position: "absolute",
@@ -84,8 +81,6 @@ export default function MainPage() {
   useEffect(() => {
     // start camera worker
     cameraWorker = new Worker();
-    cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
-    cameraWorker.postMessage({ cmd: "SET_UPDOWN", upDown: cameraUpDownDetection });
     return () => cameraWorker?.terminate();
   }, []);
 
@@ -164,13 +159,11 @@ export default function MainPage() {
       return;
     }
     // send start signal to worker process
-    cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
     cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "CALIBRATE" });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cameraWorker.onmessage = (event) => {
       if (event.data.cmd == "CALIBRATION_FINISHED") {
         if (event.data.success) {
-          setCalibratePoint(event.data.calibratePoint);
           setCalibrationError("");
         } else {
           setCalibrationError(event.data.errorMsg);
@@ -198,9 +191,6 @@ export default function MainPage() {
     }
     console.groupCollapsed();
     // send start signal to worker process
-    cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: cameraThreshs });
-    cameraWorker.postMessage({ cmd: "SET_UPDOWN", upDown: cameraUpDownDetection });
-    cameraWorker.postMessage({ cmd: "SET_CALIBRATE_POINT", calibratePoint: calibratePoint });
     cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "SHOOT" });
     let currShotPoint = shotPoint;
     let currShots = shots;
@@ -405,9 +395,7 @@ export default function MainPage() {
               <SettingsPage
                 setCameraId={setCameraId}
                 setMicId={setMicId}
-                setCameraThreshs={setCameraThreshs}
                 setMicThresh={setMicThresh}
-                setCameraUpDownDetection={setCameraUpDownDetection}
                 cameraWorker={cameraWorker} />
             </Box>
           </Modal>

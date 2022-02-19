@@ -37,9 +37,9 @@ const getDefaultParameters = (): cv.SimpleBlobDetectorParams => {
 
 // state variables
 let video: cv.VideoCapture | null = null;
-let threshs: number[] | null = null;
+let threshs: number[] = [120, 150];
 let showThreshs = false;
-let detectCircle = false;
+let showCircle = false;
 let upDown = true;
 let preTrace: TracePoint[] = [];
 const params = getDefaultParameters();
@@ -80,6 +80,7 @@ ctx.onmessage = (event) => {
       // testTriggers = [3600, 7200, 10560];
       cameraId = "/Users/msundarmsa/stasys/220821/720p_120fps_2 shots.mp4";
       testTriggers = [1800, 5400];
+      calibratePoint = {r: 65.52388567802231, time: 0, x: 530.0256890190974, y: 433.28644789997327};
     }
 
     console.log({ mode, threshs, upDown, RATIO1, calibratePoint, fineAdjust });
@@ -100,7 +101,6 @@ ctx.onmessage = (event) => {
     beforeTrace = [];
     shotPoint = null;
     afterTrace = [];
-    RATIO1 = 1;
     testTriggers = [];
     frameId = 0;
     video = null;
@@ -119,7 +119,7 @@ ctx.onmessage = (event) => {
   } else if (event.data.cmd == "SET_SHOW_THRESHS") {
     showThreshs = event.data.showThreshs;
   } else if (event.data.cmd == "SET_SHOW_CIRCLE") {
-    detectCircle = event.data.showCircle;
+    showCircle = event.data.showCircle;
   } else if (event.data.cmd == "SET_UPDOWN") {
     upDown = event.data.upDown;
   } else if (event.data.cmd == "SET_CALIBRATE_POINT") {
@@ -127,6 +127,8 @@ ctx.onmessage = (event) => {
     RATIO1 = SEVEN_RING_SIZE / calibratePoint.r;
   } else if (event.data.cmd == "SET_FINE_ADJUST") {
     fineAdjust = event.data.fineAdjust;
+  } else if (event.data.cmd == "GET_PARAMS") {
+    ctx.postMessage({ cmd: "PARAMS", threshs, upDown, detectCircle: showCircle, showThreshs });
   }
 };
 
@@ -218,13 +220,15 @@ const grabFrame = (frame: cv.Mat): boolean => {
 
     if (triggerTime != -1) {
       // received trigger
-      const calibratePoint = calibrate();
-      if (calibratePoint.r > 0) {
+      const currCalibratePoint = calibrate();
+      if (currCalibratePoint.r > 0) {
         ctx.postMessage({
           cmd: "CALIBRATION_FINISHED",
           success: true,
-          calibratePoint: calibratePoint,
         });
+        calibratePoint = currCalibratePoint;
+        RATIO1 = SEVEN_RING_SIZE / currCalibratePoint.r;
+        console.log(calibratePoint);
       } else {
         ctx.postMessage({
           cmd: "CALIBRATION_FINISHED",
@@ -318,7 +322,13 @@ const grabFrame = (frame: cv.Mat): boolean => {
       if (!shotStarted) {
         if (upDown) {
           // if up/down detection is enabled, detect aim going up and down
-          preTrace.push(center);
+          if (preTrace.length == 0) {
+            preTrace = [center];
+          } else if (preTrace.length == 1) {
+            preTrace = [preTrace[0], center];
+          } else {
+            preTrace = [preTrace[1], center];
+          }
 
           if (preTrace.length == 2) {
             // shot is started if the aim went past the edge (preTrace[0].y > TARGET_SIZE / 2)
@@ -342,9 +352,6 @@ const grabFrame = (frame: cv.Mat): boolean => {
           ctx.postMessage({ cmd: "CLEAR_TRACE" });
 
           shotStartTime = currTime;
-        } else if (upDown) {
-          // move pretrace window down
-          preTrace.shift();
         }
       } else {
         if (shotPoint == null) {
@@ -440,7 +447,7 @@ const processDisplay = (frame: cv.Mat): cv.Mat => {
     frame = frame.cvtColor(cv.COLOR_GRAY2BGR);
   }
 
-  if (detectCircle) {
+  if (showCircle) {
     detectCircles(grayFrame).forEach((kp) => {
       frame.drawCircle(kp.pt, kp.size / 2, new cv.Vec3(0, 0, 255), cv.FILLED);
     });

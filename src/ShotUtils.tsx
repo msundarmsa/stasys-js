@@ -124,10 +124,6 @@ export const toDP = (x: number, dp: number) => {
   return numDP;
 };
 
-export const defaultCalibratePoint = (): TracePoint => {
-  return {x: 0, y: 0, r: 0, time: 0};
-}
-
 export interface Shot {
   id: number;
   score: number;

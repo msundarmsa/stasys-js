@@ -41,6 +41,8 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
 
   useEffect(() => {
     getMics();
+
+    return () => stopMic();
   }, []);
 
   const stopMic = () => {
