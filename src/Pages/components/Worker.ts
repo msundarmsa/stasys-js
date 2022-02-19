@@ -133,7 +133,7 @@ ctx.onmessage = (event) => {
       cmd: "PARAMS",
       threshs,
       upDown,
-      showCircle: showCircle,
+      showCircle,
       showThreshs,
     });
   }

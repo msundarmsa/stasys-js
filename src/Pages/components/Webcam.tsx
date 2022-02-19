@@ -56,6 +56,7 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
 
       setShowCircle(event.data.showCircle);
       setShowThreshs(event.data.showThreshs);
+      setThreshs(event.data.threshs);
       setUpDownDetection(event.data.upDown);
     };
 
