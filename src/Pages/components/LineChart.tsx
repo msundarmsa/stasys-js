@@ -165,7 +165,7 @@ const LineChart = ({
       className={`line-chart-${name}`}
       width="100%"
       style={{ aspectRatio: "1280/720" }}>
-      <line x1="50%" y1="0%" x2="50%" y2="100%" stroke={colors[colors.length - 1]} transform={`translate(${(MARGINS.left - MARGINS.right) / 2}, 0)`}/>
+      {zeroLine ? <line x1="50%" y1="0%" x2="50%" y2="100%" stroke={colors[colors.length - 1]} transform={`translate(${(MARGINS.left - MARGINS.right) / 2}, 0)`}/> : null}
     </svg>
   );
 };
