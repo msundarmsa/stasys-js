@@ -84,7 +84,7 @@ export const updateShot = (shot: Shot, beforeTrace: TracePoint[]) => {
   updateScore(shot);
   updatePolar(shot);
   updateScoreStats(beforeTrace, shot);
-}
+};
 
 export const genRandomShots = (n: number): Shot[] => {
   const shots: Shot[] = [];

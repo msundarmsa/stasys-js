@@ -72,8 +72,12 @@ const LineChart = ({
 
     if (initialRender) {
       // add placeholder for axes
-      select(`.line-chart-${name}`).append("g").attr("class", `line-chart-${name}-yaxis`);
-      select(`.line-chart-${name}`).append("g").attr("class", `line-chart-${name}-xaxis`);
+      select(`.line-chart-${name}`)
+        .append("g")
+        .attr("class", `line-chart-${name}-yaxis`);
+      select(`.line-chart-${name}`)
+        .append("g")
+        .attr("class", `line-chart-${name}-xaxis`);
 
       setInitialRender(false);
     }
@@ -81,9 +85,13 @@ const LineChart = ({
     if (lines.length > 0 && firstRender) {
       // add placeholder for lines
       for (let i = 0; i < lines.length; i++) {
-        select(`.line-chart-${name}`).append("path").attr("class", `line-chart-${name}-line-${i}`);
+        select(`.line-chart-${name}`)
+          .append("path")
+          .attr("class", `line-chart-${name}-line-${i}`);
       }
-      select(`.line-chart-${name}`).append("path").attr("class", `line-chart-${name}-ref-line`);
+      select(`.line-chart-${name}`)
+        .append("path")
+        .attr("class", `line-chart-${name}-ref-line`);
 
       setFirstRender(false);
     }
@@ -156,7 +164,6 @@ const LineChart = ({
         .attr("stroke", colors[lines.length])
         .attr("stroke-width", 1.5);
     }
-
   }, [lines, refLevel]);
 
   return (
@@ -164,8 +171,18 @@ const LineChart = ({
       ref={svgElem}
       className={`line-chart-${name}`}
       width="100%"
-      style={{ aspectRatio: "1280/720" }}>
-      {zeroLine ? <line x1="50%" y1="0%" x2="50%" y2="100%" stroke={colors[colors.length - 1]} transform={`translate(${(MARGINS.left - MARGINS.right) / 2}, 0)`}/> : null}
+      style={{ aspectRatio: "1280/720" }}
+    >
+      {zeroLine ? (
+        <line
+          x1="50%"
+          y1="0%"
+          x2="50%"
+          y2="100%"
+          stroke={colors[colors.length - 1]}
+          transform={`translate(${(MARGINS.left - MARGINS.right) / 2}, 0)`}
+        />
+      ) : null}
     </svg>
   );
 };

@@ -76,7 +76,12 @@ ctx.onmessage = (event) => {
       fps = mode != "DISPLAY" ? 1000 : 30;
       cameraId = "/Users/msundarmsa/stasys/220821/720p_120fps_2 shots.mp4";
       testTriggers = [1800, 5400];
-      calibratePoint = {r: 65.52388567802231, time: 0, x: 530.0256890190974, y: 433.28644789997327};
+      calibratePoint = {
+        r: 65.52388567802231,
+        time: 0,
+        x: 530.0256890190974,
+        y: 433.28644789997327,
+      };
     }
 
     console.log({ mode, threshs, upDown, RATIO1, calibratePoint, fineAdjust });
@@ -124,7 +129,13 @@ ctx.onmessage = (event) => {
   } else if (event.data.cmd == "SET_FINE_ADJUST") {
     fineAdjust = event.data.fineAdjust;
   } else if (event.data.cmd == "GET_PARAMS") {
-    ctx.postMessage({ cmd: "PARAMS", threshs, upDown, showCircle: showCircle, showThreshs });
+    ctx.postMessage({
+      cmd: "PARAMS",
+      threshs,
+      upDown,
+      showCircle: showCircle,
+      showThreshs,
+    });
   }
 };
 
@@ -273,7 +284,7 @@ const grabFrame = (frame: cv.Mat): boolean => {
             cmd: "SHOT_FINISHED",
             beforeTrace: beforeTrace,
             afterTrace: afterTrace,
-            shotTime: shotPoint.time
+            shotTime: shotPoint.time,
           });
 
           // reset shot

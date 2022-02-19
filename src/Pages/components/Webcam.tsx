@@ -47,7 +47,7 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
       // TODO: display error message
       return;
     }
-    cameraWorker.postMessage({ cmd: 'GET_PARAMS' });
+    cameraWorker.postMessage({ cmd: "GET_PARAMS" });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cameraWorker.onmessage = (event) => {
       if (event.data.cmd != "PARAMS") {
@@ -57,7 +57,7 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
       setShowCircle(event.data.showCircle);
       setShowThreshs(event.data.showThreshs);
       setUpDownDetection(event.data.upDown);
-    }
+    };
 
     return () => stopWebcam();
   }, []);
@@ -99,7 +99,11 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
 
     // send start signal to worker process
     const deviceIndex = devices.indexOf(device);
-    cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: deviceIndex, mode: "DISPLAY" });
+    cameraWorker.postMessage({
+      cmd: "START_CAMERA",
+      cameraId: deviceIndex,
+      mode: "DISPLAY",
+    });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cameraWorker.onmessage = (event) => {
       if (event.data.cmd != "GRABBED_FRAME" || !canvasRef.current) {

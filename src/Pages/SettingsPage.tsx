@@ -9,7 +9,12 @@ import Worker from "worker-loader!./components/Worker";
 // electron.ipcRenderer.getOpenCVVersion((version) => {
 // });
 
-const SettingsPage = ( {setCameraId, setMicId, setMicThresh, cameraWorker }: IProps) => {
+const SettingsPage = ({
+  setCameraId,
+  setMicId,
+  setMicThresh,
+  cameraWorker,
+}: IProps) => {
   return (
     <div>
       <Typography textAlign="center" variant="h3">

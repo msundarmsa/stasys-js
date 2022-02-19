@@ -174,28 +174,28 @@ export const Target = ({
           position: "absolute",
         }}
       >
-      {shots.map((shot, _) => {
-        return (
+        {shots.map((shot, _) => {
+          return (
+            <circle
+              cx={`${translateX(shot.x)}%`}
+              cy={`${translateY(shot.y)}%`}
+              fill="#000000"
+              r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
+              stroke="#ffffff"
+              strokeWidth={3}
+            />
+          );
+        })}
+        {shotPoint ? (
           <circle
-            cx={`${translateX(shot.x)}%`}
-            cy={`${translateY(shot.y)}%`}
-            fill="#000000"
+            cx={`${translateX(shotPoint[0])}%`}
+            cy={`${translateY(shotPoint[1])}%`}
+            fill="#ff1493"
             r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
             stroke="#ffffff"
             strokeWidth={3}
           />
-        );
-      })}
-      {shotPoint ? (
-        <circle
-          cx={`${translateX(shotPoint[0])}%`}
-          cy={`${translateY(shotPoint[1])}%`}
-          fill="#ff1493"
-          r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
-          stroke="#ffffff"
-          strokeWidth={3}
-        />
-      ) : null}
+        ) : null}
       </svg>
       <svg style={{ height: "100%", width: "100%", aspectRatio: "1/1" }}>
         {circles.map((circle, _) => {

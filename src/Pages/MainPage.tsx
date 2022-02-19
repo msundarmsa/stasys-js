@@ -4,7 +4,15 @@ import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import { Alert, AlertColor, IconButton, List, ListItem, Modal, Snackbar } from "@mui/material";
+import {
+  Alert,
+  AlertColor,
+  IconButton,
+  List,
+  ListItem,
+  Modal,
+  Snackbar,
+} from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SettingsPage from "./SettingsPage";
 import ScoreStatCard from "./components/ScoreStatCard";
@@ -56,7 +64,7 @@ export default function MainPage() {
   const [shotPoint, setShotPoint] = useState<[number, number]>();
   const [beforeTrace, setBeforeTrace] = useState<[number, number]>();
   const [afterTrace, setAfterTrace] = useState<[number, number]>();
-  const [data, setData] = useState<{x: number, y: number}[][]>([]);
+  const [data, setData] = useState<{ x: number; y: number }[][]>([]);
 
   // buttons
   const [calibrateStarted, setCalibrateStarted] = useState(false);
@@ -106,7 +114,10 @@ export default function MainPage() {
     // add test shots to shot group as well to check zoomed
     testShotGroups.push(testShots);
 
-    setShotPoint([allTestShots[allTestShots.length - 1].x, allTestShots[allTestShots.length - 1].y]);
+    setShotPoint([
+      allTestShots[allTestShots.length - 1].x,
+      allTestShots[allTestShots.length - 1].y,
+    ]);
     setShots(testShots.reverse());
     setShotGroups(testShotGroups.reverse());
     setAllShots(allTestShots.reverse());
@@ -144,10 +155,16 @@ export default function MainPage() {
       }
     }
 
-    if ((!user_chose_video && !usbVideoExists) || (!user_chose_audio && !usbAudioExists)) {
+    if (
+      (!user_chose_video && !usbVideoExists) ||
+      (!user_chose_audio && !usbAudioExists)
+    ) {
       setCameraId(firstCameraId);
       setMicId(firstMicId);
-      showToast("info", "Could not find USB camera/mic. Chosen first available camera/mic. If you would like to change this please go to settings dialog and manually select the camera and microphone.")
+      showToast(
+        "info",
+        "Could not find USB camera/mic. Chosen first available camera/mic. If you would like to change this please go to settings dialog and manually select the camera and microphone."
+      );
     }
   }
 
@@ -160,7 +177,11 @@ export default function MainPage() {
       return;
     }
     // send start signal to worker process
-    cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "CALIBRATE" });
+    cameraWorker.postMessage({
+      cmd: "START_CAMERA",
+      cameraId: cameraId,
+      mode: "CALIBRATE",
+    });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cameraWorker.onmessage = (event) => {
       if (event.data.cmd == "CALIBRATION_FINISHED") {
@@ -175,13 +196,18 @@ export default function MainPage() {
         handleCalibrationSBOpen();
       }
     };
-  }
+  };
 
   const clearTrace = () => {
     if (canvasRef.current) {
-      const context = canvasRef.current.getContext('2d');
+      const context = canvasRef.current.getContext("2d");
       if (context) {
-        context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        context.clearRect(
+          0,
+          0,
+          canvasRef.current.width,
+          canvasRef.current.height
+        );
       }
     }
   };
@@ -191,7 +217,11 @@ export default function MainPage() {
       return;
     }
     // send start signal to worker process
-    cameraWorker.postMessage({ cmd: "START_CAMERA", cameraId: cameraId, mode: "SHOOT" });
+    cameraWorker.postMessage({
+      cmd: "START_CAMERA",
+      cameraId: cameraId,
+      mode: "SHOOT",
+    });
     let currShotPoint = shotPoint;
     let currShots = shots;
     let currAllShots = allShots;
@@ -240,8 +270,8 @@ export default function MainPage() {
           setShots(currShots);
 
           // cut the traces from +-0.5s (500ms) around shot
-          const xData: {x: number, y: number}[] = [];
-          const yData: {x: number, y: number}[] = [];
+          const xData: { x: number; y: number }[] = [];
+          const yData: { x: number; y: number }[] = [];
           let idx = event.data.beforeTrace.length - 1;
           while (idx >= 0) {
             const currTP = event.data.beforeTrace[idx];
@@ -252,8 +282,8 @@ export default function MainPage() {
             const currTime = (currTP.time - event.data.shotTime) / 1000;
             const currX = event.data.beforeTrace[idx].x;
             const currY = event.data.beforeTrace[idx].y;
-            xData.push({x: currTime, y: currX});
-            yData.push({x: currTime, y: currY});
+            xData.push({ x: currTime, y: currX });
+            yData.push({ x: currTime, y: currY });
 
             idx -= 1;
           }
@@ -269,18 +299,18 @@ export default function MainPage() {
             const currTime = (currTP.time - event.data.shotTime) / 1000;
             const currX = event.data.afterTrace[idx].x;
             const currY = event.data.afterTrace[idx].y;
-            xData.push({x: currTime, y: currX});
-            yData.push({x: currTime, y: currY});
+            xData.push({ x: currTime, y: currX });
+            yData.push({ x: currTime, y: currY });
 
             idx += 1;
           }
 
-          console.log({ xData, yData })
+          console.log({ xData, yData });
           setData([xData, yData]);
         }
       }
     };
-  }
+  };
 
   const stopWebcam = () => {
     // send stop signal to worker process
@@ -288,7 +318,7 @@ export default function MainPage() {
       cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
       cameraWorker.onmessage = null;
     }
-  }
+  };
 
   const startMic = async () => {
     const constraints = {
@@ -313,26 +343,27 @@ export default function MainPage() {
 
     let lastTrigger = -1;
     audioInterval = setInterval(() => {
-        // get data from audio stream
-        const volumes = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(volumes);
-        let volumeSum = 0;
-        for (let i = 0; i < volumes.length; i += 1) {
-          volumeSum += volumes[i];
-        }
-        const currTime = Date.now();
+      // get data from audio stream
+      const volumes = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(volumes);
+      let volumeSum = 0;
+      for (let i = 0; i < volumes.length; i += 1) {
+        volumeSum += volumes[i];
+      }
+      const currTime = Date.now();
 
-        // Value range: 127 = analyser.maxDecibels - analyser.minDecibels;
-        const volume = volumeSum / volumes.length / 127;
-        const triggerLocked = lastTrigger >= 0 && (currTime - lastTrigger) <= triggerLock;
-        if (volume > micThresh && !triggerLocked) {
-          if (cameraWorker) {
-            cameraWorker.postMessage( { cmd: "TRIGGER", time: currTime });
-          }
-          lastTrigger = currTime;
+      // Value range: 127 = analyser.maxDecibels - analyser.minDecibels;
+      const volume = volumeSum / volumes.length / 127;
+      const triggerLocked =
+        lastTrigger >= 0 && currTime - lastTrigger <= triggerLock;
+      if (volume > micThresh && !triggerLocked) {
+        if (cameraWorker) {
+          cameraWorker.postMessage({ cmd: "TRIGGER", time: currTime });
         }
+        lastTrigger = currTime;
+      }
     }, intervalMs);
-  }
+  };
 
   const stopMic = () => {
     if (audioInterval) {
@@ -344,7 +375,7 @@ export default function MainPage() {
       audioContext.close();
       audioContext = undefined;
     }
-  }
+  };
 
   const calibrateClick = () => {
     if (shootStarted) {
@@ -367,7 +398,7 @@ export default function MainPage() {
       // startMic();
       setCalibrateStarted(true);
     }
-  }
+  };
 
   const shootClick = () => {
     if (calibrateStarted) {
@@ -389,7 +420,7 @@ export default function MainPage() {
       // startMic();
       setShootStarted(true);
     }
-  }
+  };
 
   return (
     <div
@@ -434,11 +465,22 @@ export default function MainPage() {
                 setCameraId={setCameraId}
                 setMicId={setMicId}
                 setMicThresh={setMicThresh}
-                cameraWorker={cameraWorker} />
+                cameraWorker={cameraWorker}
+              />
             </Box>
           </Modal>
-          <Button color={calibrateStarted ? "info" : "inherit"} onClick={calibrateClick}>{calibrateStarted ? "CALIBRATING" : "CALIBRATE" }</Button>
-          <Button color={shootStarted ? "info" : "inherit"} onClick={shootClick}>{shootStarted ? "SHOOTING" : "SHOOT"}</Button>
+          <Button
+            color={calibrateStarted ? "info" : "inherit"}
+            onClick={calibrateClick}
+          >
+            {calibrateStarted ? "CALIBRATING" : "CALIBRATE"}
+          </Button>
+          <Button
+            color={shootStarted ? "info" : "inherit"}
+            onClick={shootClick}
+          >
+            {shootStarted ? "SHOOTING" : "SHOOT"}
+          </Button>
         </Toolbar>
       </AppBar>
       <div
@@ -549,13 +591,31 @@ export default function MainPage() {
           </div>
         </div>
       </div>
-      <Snackbar open={calibrationSBOpen} autoHideDuration={10000} onClose={handleCalibrationSBClose}>
-        <Alert onClose={handleCalibrationSBClose} severity={calibrationError == "" ? "success" : "error"} sx={{ width: '100%' }}>
-          {calibrationError == "" ? "Calibration finished!" : "Calibration failed: " + calibrationError}
+      <Snackbar
+        open={calibrationSBOpen}
+        autoHideDuration={10000}
+        onClose={handleCalibrationSBClose}
+      >
+        <Alert
+          onClose={handleCalibrationSBClose}
+          severity={calibrationError == "" ? "success" : "error"}
+          sx={{ width: "100%" }}
+        >
+          {calibrationError == ""
+            ? "Calibration finished!"
+            : "Calibration failed: " + calibrationError}
         </Alert>
       </Snackbar>
-      <Snackbar open={toastOpen} autoHideDuration={5000} onClose={handleToastClose}>
-        <Alert onClose={handleToastClose} severity={toastSeverity} sx={{ width: '100%' }}>
+      <Snackbar
+        open={toastOpen}
+        autoHideDuration={5000}
+        onClose={handleToastClose}
+      >
+        <Alert
+          onClose={handleToastClose}
+          severity={toastSeverity}
+          sx={{ width: "100%" }}
+        >
           {toastMsg}
         </Alert>
       </Snackbar>
