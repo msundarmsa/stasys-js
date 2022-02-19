@@ -37,13 +37,13 @@ const getDefaultParameters = (): cv.SimpleBlobDetectorParams => {
 
 // state variables
 let video: cv.VideoCapture | null = null;
-let threshs: number[] = [120, 150];
+const params = getDefaultParameters();
+let detector = new cv.SimpleBlobDetector(params);
+let threshs: number[] = [params.minThreshold, params.maxThreshold];
 let showThreshs = false;
 let showCircle = false;
 let upDown = true;
 let preTrace: TracePoint[] = [];
-const params = getDefaultParameters();
-let detector = new cv.SimpleBlobDetector(params);
 let mode = "";
 let startTime = 0;
 let triggerTime = -1;
@@ -74,10 +74,6 @@ ctx.onmessage = (event) => {
 
     if (process.env.ELECTRON_DEV) {
       fps = mode != "DISPLAY" ? 1000 : 30;
-      // cameraId = "/Users/msundarmsa/stasys/300820/1/shot.mp4";
-      // testTriggers = [312, 1754, 3295, 5116, 6506, 7589, 9914, 11104, 12424, 14422, 15713, 17499, 21796, 23156, 24537, 26312, 27402, 28559, 29944, 31059, 32233, 33654, 34582, 35775, 37593, 38745, 40029, 41795, 43269, 44616];
-      // cameraId = "/Users/msundarmsa/stasys/220821/720p_120fps_10 shots.mp4";
-      // testTriggers = [3600, 7200, 10560];
       cameraId = "/Users/msundarmsa/stasys/220821/720p_120fps_2 shots.mp4";
       testTriggers = [1800, 5400];
       calibratePoint = {r: 65.52388567802231, time: 0, x: 530.0256890190974, y: 433.28644789997327};
@@ -190,6 +186,7 @@ const grabFrame = (frame: cv.Mat): boolean => {
   } else if (mode == "CALIBRATE") {
     const keypoints = detectCircles(frame);
     if (keypoints.length != 1) {
+      // circle not detected properly
       if (currTime - startTime > 60000) {
         ctx.postMessage({
           cmd: "CALIBRATION_FINISHED",
@@ -203,6 +200,7 @@ const grabFrame = (frame: cv.Mat): boolean => {
     }
 
     if (currTime - startTime > 120000) {
+      // timeout
       ctx.postMessage({
         cmd: "CALIBRATION_FINISHED",
         success: false,
@@ -269,7 +267,6 @@ const grabFrame = (frame: cv.Mat): boolean => {
           shotPoint != null &&
           timeSinceShotStart >= shotPoint.time + 1000
         ) {
-          console.log("SHOT FINISHED!");
           // 1s after trigger is pulled, shot is finished. create new object for this shot
           // and draw the x-t and y-t graph
           ctx.postMessage({

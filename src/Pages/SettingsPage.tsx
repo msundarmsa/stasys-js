@@ -1,13 +1,13 @@
 import { Box, Typography } from "@mui/material";
 import Webcam from "./components/Webcam";
 import Mic from "./components/Mic";
-import electron from "../ipc";
 // eslint-disable-next-line import/no-unresolved
 import Worker from "worker-loader!./components/Worker";
 
-electron.ipcRenderer.getOpenCVVersion((version) => {
-  console.log(`(SettingsPage) OpenCV Version: ${version}`);
-});
+// uncomment if IPC between main and renderer process is needed
+// import electron from "../ipc";
+// electron.ipcRenderer.getOpenCVVersion((version) => {
+// });
 
 const SettingsPage = ( {setCameraId, setMicId, setMicThresh, cameraWorker }: IProps) => {
   return (
