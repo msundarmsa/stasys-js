@@ -4,11 +4,6 @@ import Mic from "./components/Mic";
 // eslint-disable-next-line import/no-unresolved
 import Worker from "worker-loader!./components/Worker";
 
-// uncomment if IPC between main and renderer process is needed
-// import electron from "../ipc";
-// electron.ipcRenderer.getOpenCVVersion((version) => {
-// });
-
 const SettingsPage = ({
   setCameraId,
   setMicId,

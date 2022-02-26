@@ -34,7 +34,7 @@ const ShotTable = ({ shots }: { shots: Shot[] }) => (
             <TableCell align="center">{toDP(shot.score, 1)}</TableCell>
             <TableCell align="center">
               <img
-                src={`/assets/images/arrow_${shot.direction}.svg`}
+                src={`../assets/images/arrow_${shot.direction}.svg`}
                 width="40"
                 height="40"
               />

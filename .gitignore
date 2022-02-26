@@ -2,6 +2,10 @@
 opencv-bindings/bin
 opencv-bindings/build
 opencv-bindings/node_modules
+src/assets/test_vids/*
+opencv-bindings/prebuilt-opencv/mac-arm64/*
+opencv-bindings/prebuilt-opencv/mac-x64/*
+opencv-bindings/prebuilt-opencv/win-intel64/*
 
 # Logs
 logs

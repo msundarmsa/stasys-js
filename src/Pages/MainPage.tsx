@@ -19,7 +19,7 @@ import ScoreStatCard from "./components/ScoreStatCard";
 import { Target, ZoomedTarget } from "./components/Target";
 import ShotTable from "./components/ShotTable";
 import LineChart from "./components/LineChart";
-import { genRandomShots, Shot, updateShot } from "../ShotUtils";
+import { genRandomShots, Shot, TracePoint, updateShot } from "../ShotUtils";
 // eslint-disable-next-line import/no-unresolved
 import Worker from "worker-loader!./components/Worker";
 
@@ -30,6 +30,20 @@ let cameraWorker: Worker | null = null;
 let audioInterval: NodeJS.Timer | undefined = undefined;
 let audioContext: AudioContext | undefined = undefined;
 const triggerLock = 5000; // trigger is locked for 5ms once triggered
+let testVidPath = "";
+let testTriggers: number[] = [];
+let testCalibratePoint: TracePoint = {x: 0, y: 0, r: 0, time: 0};
+
+// uncomment if IPC between main and renderer process is needed
+import electron from "../ipc";
+electron.ipcRenderer.sendMsg("GET_TEST_VID");
+electron.ipcRenderer.once("main-render-channel", (...args) => {
+  console.log("Received test args");
+  console.log(args);
+  testVidPath = args[0][0] as unknown as string;
+  testTriggers = args[0][1] as unknown as number[];
+  testCalibratePoint = args[0][2] as unknown as TracePoint;
+});
 
 export default function MainPage() {
   // settings modal
@@ -114,14 +128,18 @@ export default function MainPage() {
     // add test shots to shot group as well to check zoomed
     testShotGroups.push(testShots);
 
-    setShotPoint([
+    const testShotPoint: [number, number] = [
       allTestShots[allTestShots.length - 1].x,
       allTestShots[allTestShots.length - 1].y,
-    ]);
+    ];
+    setShotPoint(testShotPoint);
     setShots(testShots.reverse());
     setShotGroups(testShotGroups.reverse());
     setAllShots(allTestShots.reverse());
     setShot(testShots[testShots.length - 1]);
+
+    startShootWebcam({testShotPoint, testShots, testShotGroups, allTestShots});
+    setShootStarted(true);
   };
 
   async function chooseDefaultCameraAndMic() {
@@ -184,6 +202,12 @@ export default function MainPage() {
     });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cameraWorker.onmessage = (event) => {
+      if (event.data.cmd == "VIDEO_STOPPED") {
+        event.data.cmd = "CALIBRATION_FINISHED";
+        event.data.success = false;
+        event.data.errorMsg = "Camera disconnected!";
+      }
+
       if (event.data.cmd == "CALIBRATION_FINISHED") {
         if (event.data.success) {
           setCalibrationError("");
@@ -212,20 +236,31 @@ export default function MainPage() {
     }
   };
 
-  const startShootWebcam = () => {
+  const startShootWebcam = (testState?: {testShotPoint: [number, number], testShots: Shot[], testShotGroups: Shot[][], allTestShots: Shot[] }) => {
     if (!cameraWorker) {
       return;
     }
+
     // send start signal to worker process
     cameraWorker.postMessage({
       cmd: "START_CAMERA",
       cameraId: cameraId,
       mode: "SHOOT",
+      test: testState !== undefined,
+      testVidPath: testVidPath,
+      testTriggers: testTriggers,
+      testCalibratePoint: testCalibratePoint
     });
     let currShotPoint = shotPoint;
     let currShots = shots;
     let currAllShots = allShots;
     let currShotGroups = shotGroups;
+    if (testState) {
+      currShotPoint = testState.testShotPoint;
+      currShots = testState.testShots;
+      currAllShots = testState.allTestShots;
+      currShotGroups = testState.testShotGroups;
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cameraWorker.onmessage = (event) => {
@@ -239,13 +274,13 @@ export default function MainPage() {
         currShotPoint = [event.data.center.x, event.data.center.y];
         setShotPoint(currShotPoint);
         if (currShots.length == 10) {
-          currShotGroups = [currShots, ...shotGroups];
+          currShotGroups = [currShots, ...currShotGroups];
           currShots = [];
           setShotGroups(currShotGroups);
           setShots(currShots);
         }
       } else if (event.data.cmd == "SHOT_FINISHED") {
-        const shotId = shots.length > 0 ? shots[0].id + 1 : 1;
+        const shotId = currAllShots.length > 0 ? currAllShots[0].id + 1 : 1;
         console.log({ data: event.data, currShotPoint });
         if (currShotPoint) {
           const shot: Shot = {
@@ -308,6 +343,12 @@ export default function MainPage() {
           console.log({ xData, yData });
           setData([xData, yData]);
         }
+      } else if (event.data.cmd == "VIDEO_STOPPED") {
+        showToast("info", `Average FPS: ${event.data.fps}`);
+        stopWebcam();
+        stopMic();
+        setShootStarted(false);
+        clearTrace();
       }
     };
   };
@@ -395,7 +436,7 @@ export default function MainPage() {
         return;
       }
       startCalibrateWebcam();
-      // startMic();
+      startMic();
       setCalibrateStarted(true);
     }
   };
@@ -417,7 +458,7 @@ export default function MainPage() {
         return;
       }
       startShootWebcam();
-      // startMic();
+      startMic();
       setShootStarted(true);
     }
   };
@@ -435,7 +476,7 @@ export default function MainPage() {
       <AppBar position="static">
         <Toolbar>
           <img
-            src="/assets/images/logo.svg"
+            src="../assets/images/logo.svg"
             height="20"
             width="20"
             style={{ verticalAlign: "middle", marginRight: 10 }}

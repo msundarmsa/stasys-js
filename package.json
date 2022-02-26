@@ -6,7 +6,7 @@
   "main": ".webpack/main",
   "scripts": {
     "start": "cross-env ELECTRON_DEV=TRUE electron-forge start --enable-logging",
-    "package": "electron-forge package && ./patch_scripts/worker_patch.sh",
+    "package": "electron-forge package && ./patch_scripts/macos_patch.sh",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx . --fix"
@@ -19,7 +19,9 @@
   "license": "MIT",
   "config": {
     "forge": {
-      "packagerConfig": {},
+      "packagerConfig": {
+        "icon": "./icons/icons/icons"
+      },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",

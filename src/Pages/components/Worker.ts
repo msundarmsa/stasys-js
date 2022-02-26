@@ -59,6 +59,22 @@ let fineAdjust: TracePoint = { x: 0, y: 0, r: 0, time: 0 };
 let testTriggers: number[] = [];
 let frameId = 0;
 
+const resetState = () => {
+  // reset state vars
+  startTime = 0;
+  triggerTime = -1;
+  shotStarted = false;
+  shotStartTime = 0;
+  circleDetectedTime = 0;
+  preTrace = [];
+  beforeTrace = [];
+  shotPoint = null;
+  afterTrace = [];
+  testTriggers = [];
+  frameId = 0;
+  video = null;
+};
+
 // process commands from main thread
 ctx.onmessage = (event) => {
   console.log(event.data.cmd);
@@ -69,19 +85,14 @@ ctx.onmessage = (event) => {
     }
 
     mode = event.data.mode;
-    let fps = mode == "SHOOT" ? 120 : 30;
+    const fps = mode == "SHOOT" ? 1000 : 30;
     let cameraId = event.data.cameraId;
 
-    if (process.env.ELECTRON_DEV) {
-      fps = mode != "DISPLAY" ? 1000 : 30;
-      cameraId = "/Users/msundarmsa/stasys/220821/720p_120fps_2 shots.mp4";
-      testTriggers = [1800, 5400];
-      calibratePoint = {
-        r: 65.52388567802231,
-        time: 0,
-        x: 530.0256890190974,
-        y: 433.28644789997327,
-      };
+    if ('test' in event.data && event.data.test) {
+      cameraId = event.data.testVidPath;
+      testTriggers = event.data.testTriggers;
+      calibratePoint = event.data.testCalibratePoint;
+      console.log(`Testing video: ${cameraId}`);
     }
 
     console.log({ mode, threshs, upDown, RATIO1, calibratePoint, fineAdjust });
@@ -92,20 +103,7 @@ ctx.onmessage = (event) => {
       video.release();
     }
 
-    // reset state vars
-    startTime = 0;
-    triggerTime = -1;
-    shotStarted = false;
-    shotStartTime = 0;
-    circleDetectedTime = 0;
-    preTrace = [];
-    beforeTrace = [];
-    shotPoint = null;
-    afterTrace = [];
-    testTriggers = [];
-    frameId = 0;
-    video = null;
-
+    resetState();
     ctx.postMessage({ cmd: "STOPPED_CAMERA" });
   } else if (event.data.cmd == "TRIGGER") {
     triggerTime = event.data.time;
@@ -142,12 +140,22 @@ ctx.onmessage = (event) => {
 const startCamera = (cameraId: string | number, fps: number) => {
   const intervalMs = 1000 / fps;
 
-  video = new cv.VideoCapture(cameraId);
+  try {
+    video = new cv.VideoCapture(cameraId);
+  } catch (error) {
+    resetState();
+    console.log(`Could not open webcam ${cameraId}`);
+    ctx.postMessage({ cmd: 'VIDEO_STOPPED', fps: 0 });
+    return;
+  }
 
   (function loop() {
     setTimeout(function () {
       if (!video) {
         // video closed
+        const fps = frameId / (Date.now() - startTime) * 1000;
+        resetState();
+        ctx.postMessage({ cmd: 'VIDEO_STOPPED', fps: fps });
         return;
       }
 
@@ -161,6 +169,14 @@ const startCamera = (cameraId: string | number, fps: number) => {
 };
 
 const grabFrame = (frame: cv.Mat): boolean => {
+  if (frame.empty) {
+    // video closed
+    const fps = frameId / (Date.now() - startTime) * 1000;
+    resetState();
+    ctx.postMessage({ cmd: 'VIDEO_STOPPED', fps: fps });
+    return false;
+  }
+
   const currTime = Date.now();
   if (frameId == 0) {
     startTime = currTime;

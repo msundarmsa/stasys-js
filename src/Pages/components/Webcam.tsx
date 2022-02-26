@@ -90,14 +90,6 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
     setCameraId(devices.indexOf(device));
     closeWebcams();
 
-    // mock create stream to get permissions in macOS
-    await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: {
-        deviceId: device.deviceId,
-      },
-    });
-
     // send start signal to worker process
     const deviceIndex = devices.indexOf(device);
     cameraWorker.postMessage({

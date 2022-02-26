@@ -151,78 +151,79 @@ export const Target = ({
   }, [newAfter]);
 
   return (
-    <div style={{ position: "relative", height: "100%" }}>
-      <canvas
-        ref={canvasRef}
-        style={{
-          left: 0,
-          top: 0,
-          zIndex: 3,
-          position: "absolute",
-          height: "100%",
-          width: "100%",
-        }}
-      ></canvas>
-      <svg
-        style={{
-          height: "100%",
-          width: "100%",
-          aspectRatio: "1/1",
-          left: 0,
-          top: 0,
-          zIndex: 3,
-          position: "absolute",
-        }}
-      >
-        {shots.map((shot, _) => {
-          return (
+    <div style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%"}}>
+      <div style={{ position: "relative", width: "100%", aspectRatio: "1/1" }}>
+        <canvas
+          ref={canvasRef}
+          style={{
+            left: 0,
+            top: 0,
+            zIndex: 3,
+            position: "absolute",
+            width: "100%",
+            aspectRatio: "1/1"
+          }}
+        ></canvas>
+        <svg
+          style={{
+            left: 0,
+            top: 0,
+            zIndex: 3,
+            position: "absolute",
+            width: "100%",
+            aspectRatio: "1/1"
+          }}
+        >
+          {shots.map((shot, _) => {
+            return (
+              <circle
+                cx={`${translateX(shot.x)}%`}
+                cy={`${translateY(shot.y)}%`}
+                fill="#000000"
+                r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
+                stroke="#ffffff"
+                strokeWidth={3}
+              />
+            );
+          })}
+          {shotPoint ? (
             <circle
-              cx={`${translateX(shot.x)}%`}
-              cy={`${translateY(shot.y)}%`}
-              fill="#000000"
+              cx={`${translateX(shotPoint[0])}%`}
+              cy={`${translateY(shotPoint[1])}%`}
+              fill="#ff1493"
               r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
               stroke="#ffffff"
               strokeWidth={3}
             />
-          );
-        })}
-        {shotPoint ? (
-          <circle
-            cx={`${translateX(shotPoint[0])}%`}
-            cy={`${translateY(shotPoint[1])}%`}
-            fill="#ff1493"
-            r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
-            stroke="#ffffff"
-            strokeWidth={3}
-          />
-        ) : null}
-      </svg>
-      <svg style={{ height: "100%", width: "100%", aspectRatio: "1/1" }}>
-        {circles.map((circle, _) => {
-          return (
-            <circle
-              cx="50%"
-              cy="50%"
-              r={`${circle.radius * 100}%`}
-              fill={circle.fill}
-              stroke={circle.border}
-            />
-          );
-        })}
-        {circleNumbers.map((circleNum, _) => {
-          return (
-            <text
-              x={`${circleNum.x * 100}%`}
-              y={`${circleNum.y * 100}%`}
-              fill={circleNum.color}
-              dominantBaseline="middle"
-              textAnchor="middle"
-            >
-              {circleNum.text}
-            </text>
-          );
-        })}
-      </svg>
+          ) : null}
+        </svg>
+        <svg style={{ height: "100%", width: "100%", aspectRatio: "1/1" }}>
+          {circles.map((circle, _) => {
+            return (
+              <circle
+                cx="50%"
+                cy="50%"
+                r={`${circle.radius * 100}%`}
+                fill={circle.fill}
+                stroke={circle.border}
+              />
+            );
+          })}
+          {circleNumbers.map((circleNum, _) => {
+            return (
+              <text
+                x={`${circleNum.x * 100}%`}
+                y={`${circleNum.y * 100}%`}
+                fill={circleNum.color}
+                dominantBaseline="middle"
+                textAnchor="middle"
+              >
+                {circleNum.text}
+              </text>
+            );
+          })}
+        </svg>
+      </div>
     </div>
   );
 };
