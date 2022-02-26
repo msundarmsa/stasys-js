@@ -189,6 +189,7 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
           lines={data.length == 0 ? [] : [data]}
           refLevel={refLevel}
           name="micplot"
+          aspectRatio="1280/720"
         />
       </Box>
       <Stack spacing={2} direction="row" sx={{ mb: 1 }} alignItems="center">

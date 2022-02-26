@@ -21,6 +21,7 @@ const LineChart = ({
   yAxisLabel,
   name,
   zeroLine,
+  aspectRatio,
 }: IProps) => {
   const svgElem = useRef<SVGSVGElement>(null);
   const [initialRender, setInitialRender] = useState(true);
@@ -171,7 +172,7 @@ const LineChart = ({
       ref={svgElem}
       className={`line-chart-${name}`}
       width="100%"
-      style={{ aspectRatio: "1280/720" }}
+      style={aspectRatio ? { aspectRatio: aspectRatio  } : { width: "100%", height: "100%"}}
     >
       {zeroLine ? (
         <line
@@ -198,6 +199,7 @@ interface IProps {
   yAxisLabel?: string;
   name: string;
   zeroLine?: boolean;
+  aspectRatio?: string;
 }
 
 export default LineChart;
