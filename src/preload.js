@@ -5,10 +5,13 @@ contextBridge.exposeInMainWorld("electron", {
     sendMsg(arg) {
       ipcRenderer.send("main-render-channel", "MSG", arg);
     },
+    sendMsgOnChannel(channel, arg) {
+      ipcRenderer.send(channel, arg);
+    },
     on(channel, func) {
       // on => listen on channel continuously
       // only listen on valid channels
-      const validChannels = ["main-render-channel"];
+      const validChannels = ["main-render-channel", "camera-render-channel"];
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender`
         ipcRenderer.on(channel, (event, ...args) => func(...args));
@@ -17,7 +20,7 @@ contextBridge.exposeInMainWorld("electron", {
     once(channel, func) {
       // once => listen on channel for a single event
       // only listen on valid channels
-      const validChannels = ["main-render-channel"];
+      const validChannels = ["main-render-channel", "camera-render-channel"];
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender`
         ipcRenderer.once(channel, (event, ...args) => func(...args));

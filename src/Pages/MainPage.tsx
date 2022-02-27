@@ -22,6 +22,7 @@ import LineChart from "./components/LineChart";
 import { genRandomShots, Shot, TracePoint, updateShot } from "../ShotUtils";
 // eslint-disable-next-line import/no-unresolved
 import Worker from "worker-loader!./components/Worker";
+import electron from "../ipc";
 
 // camera thread
 let cameraWorker: Worker | null = null;
@@ -34,8 +35,6 @@ let testVidPath = "";
 let testTriggers: number[] = [];
 let testCalibratePoint: TracePoint = {x: 0, y: 0, r: 0, time: 0};
 
-// uncomment if IPC between main and renderer process is needed
-import electron from "../ipc";
 electron.ipcRenderer.sendMsg("GET_TEST_VID");
 electron.ipcRenderer.once("main-render-channel", (...args) => {
   console.log("Received test args");
@@ -44,6 +43,12 @@ electron.ipcRenderer.once("main-render-channel", (...args) => {
   testTriggers = args[0][1] as unknown as number[];
   testCalibratePoint = args[0][2] as unknown as TracePoint;
 });
+
+electron.ipcRenderer.on("camera-render-channel", (...args) => {
+  console.log(`[MainPage] Received: ${args}`);
+});
+electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", "PING");
+console.log(`[MainPage] Sent PING`);
 
 export default function MainPage() {
   // settings modal
