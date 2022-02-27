@@ -24,7 +24,6 @@ ipcMain.once("main-render-channel", async (event) => {
   console.log("Sending test args");
   console.log(args);
   event.sender.send('main-render-channel', args);
-  console.log(event.sender);
 });
 
 // request access to camera and mic (for macOS only)
@@ -79,17 +78,20 @@ const createWindow = (): void => {
 
   // start camera process
   const cameraProcess = fork(path.join(__dirname, 'CameraProcess'));
-  console.log(`[MAIN] Created child process with pid: ${cameraProcess.pid}`);
 
   // forward messages from renderer to camera process
   ipcMain.on("camera-render-channel", async (_, args) => {
-    console.log(`[Main] Received from renderer process: ${args}`);
     cameraProcess.send(args)
   });
 
   // forward messages from camera process to renderer
   cameraProcess.on('message', (message) => {
-    console.log(`[Main] Received from camera process: ${message}`);
+    // @ts-expect-error: all messages must have cmd property
+    if (message.cmd == 'KILL') {
+      // process asked to be killed
+      process.kill(cameraProcess.pid);
+      return;
+    }
     mainWindow.webContents.send("camera-render-channel", message);
   });
 };

@@ -44,12 +44,6 @@ electron.ipcRenderer.once("main-render-channel", (...args) => {
   testCalibratePoint = args[0][2] as unknown as TracePoint;
 });
 
-electron.ipcRenderer.on("camera-render-channel", (...args) => {
-  console.log(`[MainPage] Received: ${args}`);
-});
-electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", "PING");
-console.log(`[MainPage] Sent PING`);
-
 export default function MainPage() {
   // settings modal
   const [settingsPageOpen, setSettingsPageOpen] = useState(false);
@@ -109,7 +103,10 @@ export default function MainPage() {
   useEffect(() => {
     // start camera worker
     cameraWorker = new Worker();
-    return () => cameraWorker?.terminate();
+    return () => {
+      cameraWorker?.terminate();
+      electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", { cmd: "KILL" });
+    }
   }, []);
 
   const handleTest = () => {
@@ -200,31 +197,33 @@ export default function MainPage() {
       return;
     }
     // send start signal to worker process
-    cameraWorker.postMessage({
+    electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", {
       cmd: "START_CAMERA",
       cameraId: cameraId,
       mode: "CALIBRATE",
     });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    cameraWorker.onmessage = (event) => {
-      if (event.data.cmd == "VIDEO_STOPPED") {
-        event.data.cmd = "CALIBRATION_FINISHED";
-        event.data.success = false;
-        event.data.errorMsg = "Camera disconnected!";
+
+    electron.ipcRenderer.on("camera-render-channel", (...rawMessage) => {
+      const message = rawMessage[0] as unknown as { cmd: string, success: boolean,
+        errorMsg: string };
+      if (message.cmd == "VIDEO_STOPPED") {
+        message.cmd = "CALIBRATION_FINISHED";
+        message.success = false;
+        message.errorMsg = "Camera disconnected!";
       }
 
-      if (event.data.cmd == "CALIBRATION_FINISHED") {
-        if (event.data.success) {
+      if (message.cmd == "CALIBRATION_FINISHED") {
+        if (message.success) {
           setCalibrationError("");
         } else {
-          setCalibrationError(event.data.errorMsg);
+          setCalibrationError(message.errorMsg);
         }
         stopWebcam();
         stopMic();
         setCalibrateStarted(false);
         handleCalibrationSBOpen();
       }
-    };
+    });
   };
 
   const clearTrace = () => {
@@ -242,12 +241,8 @@ export default function MainPage() {
   };
 
   const startShootWebcam = (testState?: {testShotPoint: [number, number], testShots: Shot[], testShotGroups: Shot[][], allTestShots: Shot[] }) => {
-    if (!cameraWorker) {
-      return;
-    }
-
     // send start signal to worker process
-    cameraWorker.postMessage({
+    electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", {
       cmd: "START_CAMERA",
       cameraId: cameraId,
       mode: "SHOOT",
@@ -267,16 +262,17 @@ export default function MainPage() {
       currShotGroups = testState.testShotGroups;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    cameraWorker.onmessage = (event) => {
-      if (event.data.cmd == "CLEAR_TRACE") {
+    electron.ipcRenderer.on("camera-render-channel", (...rawMessage) => {
+      const message = rawMessage[0] as unknown as { cmd: string, center: TracePoint, beforeTrace: TracePoint[], afterTrace: TracePoint[], shotTime: number, fps: number };
+
+      if (message.cmd == "CLEAR_TRACE") {
         clearTrace();
-      } else if (event.data.cmd == "ADD_BEFORE") {
-        setBeforeTrace([event.data.center.x, event.data.center.y]);
-      } else if (event.data.cmd == "ADD_AFTER") {
-        setAfterTrace([event.data.center.x, event.data.center.y]);
-      } else if (event.data.cmd == "ADD_SHOT") {
-        currShotPoint = [event.data.center.x, event.data.center.y];
+      } else if (message.cmd == "ADD_BEFORE") {
+        setBeforeTrace([message.center.x, message.center.y]);
+      } else if (message.cmd == "ADD_AFTER") {
+        setAfterTrace([message.center.x, message.center.y]);
+      } else if (message.cmd == "ADD_SHOT") {
+        currShotPoint = [message.center.x, message.center.y];
         setShotPoint(currShotPoint);
         if (currShots.length == 10) {
           currShotGroups = [currShots, ...currShotGroups];
@@ -284,9 +280,9 @@ export default function MainPage() {
           setShotGroups(currShotGroups);
           setShots(currShots);
         }
-      } else if (event.data.cmd == "SHOT_FINISHED") {
+      } else if (message.cmd == "SHOT_FINISHED") {
         const shotId = currAllShots.length > 0 ? currAllShots[0].id + 1 : 1;
-        console.log({ data: event.data, currShotPoint });
+        console.log({ data: message, currShotPoint });
         if (currShotPoint) {
           const shot: Shot = {
             id: shotId,
@@ -304,7 +300,7 @@ export default function MainPage() {
           currAllShots = [shot, ...currAllShots];
           currShots = [shot, ...currShots];
 
-          updateShot(shot, event.data.beforeTrace);
+          updateShot(shot, message.beforeTrace);
           setAllShots(currAllShots);
           setShot(shot);
           setShots(currShots);
@@ -312,16 +308,16 @@ export default function MainPage() {
           // cut the traces from +-0.5s (500ms) around shot
           const xData: { x: number; y: number }[] = [];
           const yData: { x: number; y: number }[] = [];
-          let idx = event.data.beforeTrace.length - 1;
+          let idx = message.beforeTrace.length - 1;
           while (idx >= 0) {
-            const currTP = event.data.beforeTrace[idx];
-            if (event.data.shotTime - currTP.time > 500) {
+            const currTP = message.beforeTrace[idx];
+            if (message.shotTime - currTP.time > 500) {
               break;
             }
 
-            const currTime = (currTP.time - event.data.shotTime) / 1000;
-            const currX = event.data.beforeTrace[idx].x;
-            const currY = event.data.beforeTrace[idx].y;
+            const currTime = (currTP.time - message.shotTime) / 1000;
+            const currX = message.beforeTrace[idx].x;
+            const currY = message.beforeTrace[idx].y;
             xData.push({ x: currTime, y: currX });
             yData.push({ x: currTime, y: currY });
 
@@ -330,15 +326,15 @@ export default function MainPage() {
           xData.reverse();
           yData.reverse();
           idx = 0;
-          while (idx <= event.data.afterTrace.length - 1) {
-            const currTP = event.data.afterTrace[idx];
-            if (currTP.time - event.data.shotTime > 500) {
+          while (idx <= message.afterTrace.length - 1) {
+            const currTP = message.afterTrace[idx];
+            if (currTP.time - message.shotTime > 500) {
               break;
             }
 
-            const currTime = (currTP.time - event.data.shotTime) / 1000;
-            const currX = event.data.afterTrace[idx].x;
-            const currY = event.data.afterTrace[idx].y;
+            const currTime = (currTP.time - message.shotTime) / 1000;
+            const currX = message.afterTrace[idx].x;
+            const currY = message.afterTrace[idx].y;
             xData.push({ x: currTime, y: currX });
             yData.push({ x: currTime, y: currY });
 
@@ -348,22 +344,19 @@ export default function MainPage() {
           console.log({ xData, yData });
           setData([xData, yData]);
         }
-      } else if (event.data.cmd == "VIDEO_STOPPED") {
-        showToast("info", `Average FPS: ${event.data.fps}`);
+      } else if (message.cmd == "VIDEO_STOPPED") {
+        showToast("info", `Average FPS: ${message.fps}`);
         stopWebcam();
         stopMic();
         setShootStarted(false);
         clearTrace();
       }
-    };
+    });
   };
 
   const stopWebcam = () => {
     // send stop signal to worker process
-    if (cameraWorker != null) {
-      cameraWorker.postMessage({ cmd: "STOP_CAMERA" });
-      cameraWorker.onmessage = null;
-    }
+    electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", { cmd: "STOP_CAMERA" });
   };
 
   const startMic = async () => {
@@ -403,9 +396,7 @@ export default function MainPage() {
       const triggerLocked =
         lastTrigger >= 0 && currTime - lastTrigger <= triggerLock;
       if (volume > micThresh && !triggerLocked) {
-        if (cameraWorker) {
-          cameraWorker.postMessage({ cmd: "TRIGGER", time: currTime });
-        }
+        electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", { cmd: "TRIGGER", time: currTime });
         lastTrigger = currTime;
       }
     }, intervalMs);

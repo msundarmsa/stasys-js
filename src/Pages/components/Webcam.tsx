@@ -12,6 +12,7 @@ import {
 import { useState, useRef, useEffect } from "react";
 // eslint-disable-next-line import/no-unresolved
 import Worker from "worker-loader!./Worker";
+import electron from "../../ipc";
 
 const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
   // menu
@@ -85,9 +86,8 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
     }
 
     // update state
-    setWebcamStarted(true);
-    setDeviceLabel(device.label);
     setCameraId(devices.indexOf(device));
+
     closeWebcams();
 
     // send start signal to worker process
@@ -119,7 +119,9 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
       return;
     }
 
-    cameraWorker.postMessage({ cmd: "SET_THRESHS", threshs: newThreshs });
+    const data = { cmd: "SET_THRESHS", threshs: newThreshs };
+    cameraWorker.postMessage(data);
+    electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", data);
     setThreshs(newThreshs);
   };
 
@@ -149,7 +151,9 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
       return;
     }
 
-    cameraWorker.postMessage({ cmd: "SET_UPDOWN", upDown: upDown });
+    const data = { cmd: "SET_UPDOWN", upDown: upDown };
+    cameraWorker.postMessage(data);
+    electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", data);
     setUpDownDetection(upDown);
   };
 
