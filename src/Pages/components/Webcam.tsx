@@ -87,6 +87,8 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
 
     // update state
     setCameraId(devices.indexOf(device));
+    setDeviceLabel(device.label);
+    setWebcamStarted(true);
 
     closeWebcams();
 
