@@ -1,5 +1,6 @@
 #!/bin/bash
 if [ $(uname) == 'Darwin' ]; then
+    # macos
     BREW_FOLDER=$(dirname $(dirname $(which brew)))
     APP_TYPE=$(arch)
     if [ $APP_TYPE == 'i386' ]; then
@@ -25,6 +26,9 @@ if [ $(uname) == 'Darwin' ]; then
         install_name_tool -change "$BREW_FOLDER/opt/opencv/lib/$LIB_NAME.4.5.dylib" \
             "../../../../../Frameworks/OpenCV.framework/$LIB_BASENAME" \
             $APP_FOLDER/Resources/app/.webpack/renderer/native_modules/opencv4nodejs.node
+        install_name_tool -change "$BREW_FOLDER/opt/opencv/lib/$LIB_NAME.4.5.dylib" \
+            "../../../../../Frameworks/OpenCV.framework/$LIB_BASENAME" \
+            $APP_FOLDER/Resources/app/.webpack/main/native_modules/opencv4nodejs.node
         echo "=> patched $LIB_NAME"
     done
 
@@ -32,5 +36,14 @@ if [ $(uname) == 'Darwin' ]; then
     sudo python patch_scripts/dependency_walker.py $APP_TYPE $APP_FOLDER $BREW_FOLDER
     echo "=> finished dependency walk"
 
+    echo "=> complete"
+else
+    # windows
+    echo ""
+    echo "=> patching win32-x64 app"
+    APP_FOLDER=out/STASYS-win32-x64
+    ## fix worker not recognizing opencv native module
+    sed -i '' 's/require.*"opencv4nodejs.node"/require("..\/native_modules\/opencv4nodejs.node"/g' \
+        $APP_FOLDER/resources/app/.webpack/renderer/Worker/index.worker.js
     echo "=> complete"
 fi

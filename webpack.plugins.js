@@ -9,10 +9,6 @@ module.exports = [
                 from: path.resolve(__dirname, 'src', 'assets'),
                 to: path.resolve(__dirname, '.webpack/renderer', 'assets')
             },
-            {
-                from: path.resolve(__dirname, 'src', 'CameraProcess.js'),
-                to: path.resolve(__dirname, '.webpack/main', 'CameraProcess.js')
-            },
         ]
     }),
     new ForkTsCheckerWebpackPlugin(),
