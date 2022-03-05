@@ -6,7 +6,7 @@
   "main": ".webpack/main",
   "scripts": {
     "start": "cross-env ELECTRON_DEV=TRUE electron-forge start --enable-logging",
-    "package": "electron-forge package && python patch_scripts/patch.py",
+    "package": "electron-forge package && python3 patch_scripts/patch.py",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx . --fix"
