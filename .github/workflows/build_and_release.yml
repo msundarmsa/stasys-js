@@ -1,0 +1,23 @@
+name: Build and Release Application
+
+on:
+  push:
+    tags:
+      - v*.*.*
+
+jobs:
+  build_macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 17
+      - run: npm ci
+      - run: npm run package
+      - run: npm run make
+      - run: mv out/make/zip/darwin/x64/STASYS-darwin-x64-1.0.0.zip out/STASYS-macos.zip
+      - uses: softprops/actions-gh-release@v1
+        with:
+          files: out/STASYS-macos.zip
+
