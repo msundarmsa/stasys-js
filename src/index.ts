@@ -9,7 +9,25 @@ declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 // test parameters
-const testVidPath = path.join(app.getAppPath(), ".webpack", "renderer", "assets", "test_vids", "720p_120fps_2_shots.mp4");
+const dirPath = path.basename(app.getAppPath());
+let testVidPath = '';
+if (dirPath == 'stasys-js') {
+  // development
+  testVidPath = path.join(app.getAppPath(), "test_vids", "720p_120fps_2_shots.mp4");
+} else {
+  // production
+  let outerDir = '';
+  if (process.platform === "win32") {
+    // windows
+    // getAppPath() = app -> Resources -> Contents -> STASYS -> parent of STASYS
+    outerDir = path.dirname(path.dirname(path.dirname(app.getAppPath())));
+  } else {
+    // macOS
+    // getAppPath() = app -> Resources -> Contents -> STASYS -> parent of STASYS
+    outerDir = path.dirname(path.dirname(path.dirname(path.dirname(app.getAppPath()))));
+  }
+  testVidPath = path.join(outerDir, "test_vids", "720p_120fps_2_shots.mp4");
+}
 const testTriggers = [1800, 5400];
 const testCalibratePoint = {
   r: 65.52388567802231,

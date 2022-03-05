@@ -41,9 +41,8 @@ def dependency_walk(dep_path, arch, libs_folder, brew_folder):
 
 if __name__ == '__main__':
     arch = sys.argv[1]
-    app_folder = sys.argv[2]
+    libs_folder = sys.argv[2]
     brew_folder = sys.argv[3]
-    libs_folder = f'{app_folder}/Frameworks/OpenCV.Framework/'
     for dep in os.listdir(libs_folder):
         # ignore non-library files like .DS_Store and folders
         if not dep.endswith('.dylib'):

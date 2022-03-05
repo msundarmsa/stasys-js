@@ -22,7 +22,6 @@ if [ $(uname) == 'Darwin' ]; then
     do
         LIB_BASENAME=$(basename $LIB)
         LIB_NAME="${LIB_BASENAME%.*}"
-        cp $LIB $FRAMEWORK/
         install_name_tool -change "$BREW_FOLDER/opt/opencv/lib/$LIB_NAME.4.5.dylib" \
             "../../../../../Frameworks/OpenCV.framework/$LIB_BASENAME" \
             $APP_FOLDER/Resources/app/.webpack/renderer/native_modules/opencv4nodejs.node
@@ -32,9 +31,7 @@ if [ $(uname) == 'Darwin' ]; then
         echo "=> patched $LIB_NAME"
     done
 
-    ## recursively find and import dependencies
-    sudo python patch_scripts/dependency_walker.py $APP_TYPE $APP_FOLDER $BREW_FOLDER
-    echo "=> finished dependency walk"
+    cp opencv-bindings/prebuilt-opencv/mac-$APP_TYPE/all_deps/*.dylib $APP_FOLDER/Frameworks/OpenCV.framework/
 
     echo "=> complete"
 else
