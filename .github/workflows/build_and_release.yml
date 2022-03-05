@@ -17,7 +17,9 @@ jobs:
       - run: npm run package
       - run: npm run make
       - run: mv out/make/zip/darwin/x64/STASYS-darwin-x64-1.0.0.zip out/STASYS-macos.zip
-      - uses: softprops/actions-gh-release@v1
+      - uses: "marvinpinto/action-automatic-releases@latest"
         with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
           files: out/STASYS-macos.zip
 
