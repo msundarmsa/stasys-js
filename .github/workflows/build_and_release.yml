@@ -15,7 +15,7 @@ jobs:
           node-version: 17
       - run: npm ci
       - run: npm run package
-      - run: zip out/STASYS-macos.zip out/STASYS-darwin-x64
+      - run: zip -r out/STASYS-macos.zip out/STASYS-darwin-x64/STASYS.app
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
