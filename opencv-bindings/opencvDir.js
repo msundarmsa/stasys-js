@@ -15,7 +15,7 @@ if (process.platform == "darwin") {
 	// macOS
 	if (process.arch == "x64") {
 		// intel
-		libDir =  OPENCV_ROOT + '/mac-x64/';
+		libDir =  OPENCV_ROOT + '/mac-x64/all_deps/';
 	} else {
 		// m1
 		libDir =  OPENCV_ROOT + '/mac-arm64/';
