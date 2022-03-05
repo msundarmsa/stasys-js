@@ -41,9 +41,18 @@ else
     # windows
     echo ""
     echo "=> patching win32-x64 app"
+
     APP_FOLDER=out/STASYS-win32-x64
     ## fix worker not recognizing opencv native module
     sed -i '' 's/require.*"opencv4nodejs.node"/require("..\/native_modules\/opencv4nodejs.node"/g' \
         $APP_FOLDER/resources/app/.webpack/renderer/Worker/index.worker.js
+
+    for LIB in opencv-bindings/prebuilt-opencv/win-intel64/*.dll
+    do
+        LIB_BASENAME=$(basename $LIB)
+        LIB_NAME="${LIB_BASENAME%.*}"
+        cp $LIB $APP_FOLDER/
+        echo "=> patched $LIB_NAME"
+    done
     echo "=> complete"
 fi
