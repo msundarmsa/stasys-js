@@ -58,9 +58,9 @@ if __name__ == '__main__':
 
         # fix worker not recognizing opencv native module
         match = 'require.*"opencv4nodejs.node"'
-        replace = 'require("..\\/native_modules\\/opencv4nodejs.node"'
+        replace = 'require("..\/native_modules\/opencv4nodejs.node"'
         folder = f'{app_folder}/resources/app/.webpack/renderer/Worker'
-        subprocess.run(['sed', '-i', f's/{match}/{replace}/g',
+        subprocess.run(['sed', '-i', f"'s/{match}/{replace}/g'",
                         f'{folder}/index.worker.js'])
 
         # copy libraries over
