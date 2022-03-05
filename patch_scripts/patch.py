@@ -31,7 +31,7 @@ if __name__ == '__main__':
             libs = out.stdout.decode().split('\n')
 
             # first line is usually the name of the .node file
-            rpath = '../../../../../Frameworks/OpenCV.framework'
+            rpath = '@loader_path/../../../../../Frameworks/OpenCV.framework'
             for lib in libs[1:]:
                 if 'opencv' in lib:
                     # clean up lib
