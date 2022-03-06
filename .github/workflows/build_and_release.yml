@@ -100,5 +100,7 @@ jobs:
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
-          files: STASYS-windows.zip STASYS-macos.zip
+          files: |
+            STASYS-windows.zip
+            STASYS-macos.zip
 
