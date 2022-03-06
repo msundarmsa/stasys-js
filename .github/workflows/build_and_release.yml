@@ -70,10 +70,13 @@ jobs:
       - name: Install Dependencies
         if: steps.cache-nodemodules.outputs.cache-hit != 'true'
         run: npm ci
-      - name: Setup environment variables
-        run: cd opencv-bindings && export OPENCV_ROOT=./prebuilt-opencv/ && cd ../
       - name: Build application
-        run: npm run package
+        run: OPENCV_ROOT=./prebuilt-opencv/ npm run package
+      - name: Upload vcxproj artifact for debugging
+        uses: actions/upload-artifact@v3
+        with:
+          name: vcxproj
+          path: opencv-bindings/build/opencv4nodejs.vcxproj
       - name: Compress application
         run: cd out/STASYS-win32-x64 && zip -r STASYS-windows.zip STASYS.app
       - name: Release application
