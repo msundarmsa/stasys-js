@@ -1,5 +1,5 @@
 # STASYS
-![release](https://github.com/msundarmsa/stasys-js/actions/workflows/build_and_release.yml/badge.svg)
+![release](https://github.com/msundarmsa/stasys-js/actions/workflows/build_and_release.yml/badge.svg)  
 An aim tracing application for air weapons written in Javascript.
 
 ## Installation
