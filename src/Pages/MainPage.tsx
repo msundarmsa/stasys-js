@@ -531,7 +531,7 @@ export default function MainPage() {
       >
         <div
           style={{
-            flex: "40%",
+            flex: "0 0 45%",
             display: "flex",
             flexDirection: "column",
             gap: 10,
@@ -539,9 +539,10 @@ export default function MainPage() {
         >
           <div
             style={{
-              flex: "80%",
+              flex: "90%",
               border: "1px solid #D7EC58",
               borderRadius: "25px",
+              overflow: "hidden",
             }}
           >
             <Target
@@ -552,7 +553,7 @@ export default function MainPage() {
               canvasRef={canvasRef}
             />
           </div>
-          <div style={{ flex: "20%", display: "flex" }}>
+          <div style={{ flex: "10%", display: "flex" }}>
             <ScoreStatCard
               scoreStatType="STABLITITY"
               scoreStat={shot ? shot.stab : 0}
@@ -575,10 +576,10 @@ export default function MainPage() {
         </div>
         <div
           style={{
-            flex: "20%",
+            flex: "0 0 15%",
             border: "1px solid #D7EC58",
             borderRadius: "25px",
-            overflow: "auto",
+            overflow: "hidden",
           }}
         >
           <List>
@@ -591,15 +592,16 @@ export default function MainPage() {
         </div>
         <div
           style={{
-            flex: "40%",
+            flex: "0 1 40%",
             display: "flex",
             flexDirection: "column",
             gap: 10,
+            overflow: "hidden",
           }}
         >
           <div
             style={{
-              flex: "60%",
+              flex: "65%",
               border: "1px solid #D7EC58",
               borderRadius: "25px",
               overflow: "hidden",
@@ -609,7 +611,7 @@ export default function MainPage() {
           </div>
           <div
             style={{
-              flex: "40%",
+              flex: "35%",
               border: "1px solid #D7EC58",
               borderRadius: "25px",
             }}

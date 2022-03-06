@@ -151,8 +151,8 @@ export const Target = ({
   }, [newAfter]);
 
   return (
-    <div style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%", width: "100%"}}>
-      <div style={{ position: "relative", width: "100%", aspectRatio: "1/1" }}>
+    <div style={{ display: "grid", height: "100%", width: "100%", overflow: "hidden", justifyContent: "center" }}>
+      <div style={{ position: "relative", width: "100%", maxHeight: "100%", aspectRatio: "1/1", overflow: "hidden" }}>
         <canvas
           ref={canvasRef}
           style={{

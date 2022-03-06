@@ -11,7 +11,7 @@ import { Shot, toDP } from "../../ShotUtils";
 
 const ShotTable = ({ shots }: { shots: Shot[] }) => (
   <TableContainer component={Paper} style={{ maxHeight: "100%" }}>
-    <Table stickyHeader sx={{ minWidth: 650 }} aria-label="simple table">
+    <Table stickyHeader aria-label="simple table" size="small" padding="checkbox">
       <TableHead>
         <TableRow>
           <TableCell>#</TableCell>

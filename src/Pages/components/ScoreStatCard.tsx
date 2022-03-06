@@ -9,7 +9,7 @@ const ScoreStatCard = ({ scoreStatType, scoreStat, dp, suffix }: IProps) => (
         <Typography variant="button" gutterBottom>
           {scoreStatType}
         </Typography>
-        <Typography variant="h1" component="div" fontSize={75}>
+        <Typography variant="h1" component="div" fontSize={50}>
           {toDP(scoreStat, dp)}
           {suffix}
         </Typography>
