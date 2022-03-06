@@ -31,6 +31,13 @@ jobs:
       - name: Install Dependencies
         if: steps.cache-nodemodules.outputs.cache-hit != 'true'
         run: npm ci
+      - name: Cache opencv-bindings build and bin
+        uses: actions/cache@v2
+        with:
+          path: |
+            opencv-bindings/build
+            opencv-bindings/bin
+          key: ${{ runner.os }}-opencv-bindings
       - name: Build app
         run: npm run package
       - name: Compress app
@@ -69,6 +76,13 @@ jobs:
       - name: Install Dependencies
         if: steps.cache-nodemodules.outputs.cache-hit != 'true'
         run: npm ci
+      - name: Cache opencv-bindings build and bin
+        uses: actions/cache@v2
+        with:
+          path: |
+            opencv-bindings/build
+            opencv-bindings/bin
+          key: ${{ runner.os }}-opencv-bindings
       - name: Build app
         run: OPENCV_ROOT=./prebuilt-opencv/ npm run package
       - name: Compress app
