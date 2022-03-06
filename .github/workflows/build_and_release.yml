@@ -86,18 +86,19 @@ jobs:
   release_app:
     runs-on: ubuntu-latest
     needs: [build_macos, build_windows]
-    - name: Download macos app
-      uses: actions/download-artifact@v3
-      with:
-        name: STASYS-macos
-    - name: Download windows app
-      uses: actions/download-artifact@v3
-      with:
-        name: STASYS-windows
-    - name: Release windows & macos apps
-      uses: "marvinpinto/action-automatic-releases@latest"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: false
-        files: STASYS-windows.zip STASYS-macos.zip
+    steps:
+      - name: Download macos app
+        uses: actions/download-artifact@v3
+        with:
+          name: STASYS-macos
+      - name: Download windows app
+        uses: actions/download-artifact@v3
+        with:
+          name: STASYS-windows
+      - name: Release windows & macos apps
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: STASYS-windows.zip STASYS-macos.zip
 
