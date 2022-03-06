@@ -9,10 +9,12 @@ jobs:
   build_macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 17
+      - name: Download source
+        uses: actions/checkout@v2
+      - name: Setup node v17
+        uses: actions/setup-node@v1
+          with:
+            node-version: 17
       - name: Cache node modules
         id: cache-nodemodules
         uses: actions/cache@v2
@@ -29,13 +31,16 @@ jobs:
       - name: Install Dependencies
         if: steps.cache-nodemodules.outputs.cache-hit != 'true'
         run: npm ci
-      - run: npm run package
-      - run: cd out/STASYS-darwin-x64 && zip -r STASYS-macos.zip STASYS.app
-      - uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
-          files: out/STASYS-darwin-x64/STASYS-macos.zip
+      - name: Build application
+        run: npm run package
+      - name: Compress application
+        run: cd out/STASYS-darwin-x64 && zip -r STASYS-macos.zip STASYS.app
+      - name: Release application
+        uses: "marvinpinto/action-automatic-releases@latest"
+          with:
+            repo_token: "${{ secrets.GITHUB_TOKEN }}"
+            prerelease: false
+            files: out/STASYS-darwin-x64/STASYS-macos.zip
 
   build_windows:
     runs-on: windows-latest
@@ -43,10 +48,12 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 17
+      - name: Download source
+        uses: actions/checkout@v2
+      - name: Setup node v17
+        uses: actions/setup-node@v1
+          with:
+            node-version: 17
       - name: Cache node modules
         id: cache-nodemodules
         uses: actions/cache@v2
@@ -63,11 +70,16 @@ jobs:
       - name: Install Dependencies
         if: steps.cache-nodemodules.outputs.cache-hit != 'true'
         run: npm ci
-      - run: npm run package
-      - run: cd out/STASYS-win32-x64 && zip -r STASYS-windows.zip STASYS.app
-      - uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
-          files: out/STASYS-win32-x64/STASYS-windows.zip
+      - name: Setup environment variables
+        run: cd opencv-bindings && export OPENCV_ROOT=./prebuilt-opencv/ && cd ../
+      - name: Build application
+        run: npm run package
+      - name: Compress application
+        run: cd out/STASYS-win32-x64 && zip -r STASYS-windows.zip STASYS.app
+      - name: Release application
+        uses: "marvinpinto/action-automatic-releases@latest"
+          with:
+            repo_token: "${{ secrets.GITHUB_TOKEN }}"
+            prerelease: false
+            files: out/STASYS-win32-x64/STASYS-windows.zip
 
