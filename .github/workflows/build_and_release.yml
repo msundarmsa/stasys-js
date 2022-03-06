@@ -73,6 +73,7 @@ jobs:
       - name: Build application
         run: OPENCV_ROOT=./prebuilt-opencv/ npm run package
       - name: Upload vcxproj artifact for debugging
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           name: vcxproj
