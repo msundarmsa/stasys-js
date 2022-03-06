@@ -72,14 +72,12 @@ jobs:
         run: npm ci
       - name: Build application
         run: OPENCV_ROOT=./prebuilt-opencv/ npm run package
-      - name: Upload vcxproj artifact for debugging
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: vcxproj
-          path: opencv-bindings/build/opencv4nodejs.vcxproj
       - name: Compress application
-        run: cd out/STASYS-win32-x64 && zip -r STASYS-windows.zip STASYS.app
+        uses: papeloto/action-zip@v1
+        with:
+          files: out/STASYS-win32-x64
+          recursive: true
+          dest: out/STASYS-windows.zip
       - name: Release application
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
