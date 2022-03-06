@@ -31,16 +31,15 @@ jobs:
       - name: Install Dependencies
         if: steps.cache-nodemodules.outputs.cache-hit != 'true'
         run: npm ci
-      - name: Build application
+      - name: Build app
         run: npm run package
-      - name: Compress application
+      - name: Compress app
         run: cd out/STASYS-darwin-x64 && zip -r STASYS-macos.zip STASYS.app
-      - name: Release application
-        uses: "marvinpinto/action-automatic-releases@latest"
+      - name: Upload app
+        uses: actions/upload-artifact@v3
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
-          files: out/STASYS-darwin-x64/STASYS-macos.zip
+          name: STASYS-macos
+          path: out/STASYS-darwin-x64/STASYS-macos.zip
 
   build_windows:
     runs-on: windows-latest
@@ -70,18 +69,35 @@ jobs:
       - name: Install Dependencies
         if: steps.cache-nodemodules.outputs.cache-hit != 'true'
         run: npm ci
-      - name: Build application
+      - name: Build app
         run: OPENCV_ROOT=./prebuilt-opencv/ npm run package
-      - name: Compress application
+      - name: Compress app
         uses: papeloto/action-zip@v1
         with:
           files: out/STASYS-win32-x64
           recursive: true
           dest: out/STASYS-windows.zip
-      - name: Release application
+      - name: Upload app
+        uses: actions/upload-artifact@v3
+        with:
+          name: STASYS-windows
+          path: out/STASYS-windows.zip
+
+    release_app:
+      runs-on: ubuntu-latest
+      needs: [build_macos, build_windows]
+      - name: Download macos app
+        uses: actions/download-artifact@v3
+        with:
+          name: STASYS-macos
+      - name: Download windows app
+        uses: actions/download-artifact@v3
+        with:
+          name: STASYS-windows
+      - name: Release windows & macos apps
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
-          files: out/STASYS-windows.zip
+          files: STASYS-windows.zip STASYS-macos.zip
 
