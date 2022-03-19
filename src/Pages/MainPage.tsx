@@ -23,6 +23,9 @@ import { genRandomShots, Shot, TracePoint, updateShot } from "../ShotUtils";
 // eslint-disable-next-line import/no-unresolved
 import Worker from "worker-loader!./components/Worker";
 import electron from "../ipc";
+// @ts-expect-error Expect error due to processing of mp3 file as import
+import doneSound from '../assets/sounds/done.mp3';
+import useSound from 'use-sound';
 
 // camera thread
 let cameraWorker: Worker | null = null;
@@ -88,6 +91,8 @@ export default function MainPage() {
   const [micId, setMicId] = useState("");
   const [micThresh, setMicThresh] = useState(0.7);
 
+  const [calibrationFinishedSound] = useSound(doneSound);
+
   const style = {
     position: "absolute",
     top: "50%",
@@ -110,6 +115,16 @@ export default function MainPage() {
   }, []);
 
   const handleTest = () => {
+    if (calibrateStarted) {
+      showToast("error", "Please wait for calibration to finish");
+      return;
+    }
+
+    if (shootStarted) {
+      showToast("error", "Please wait for previous test to finish");
+      return;
+    }
+
     const allTestShots = genRandomShots(19);
     const testShotGroups: Shot[][] = [];
     let currIdx = 0;
@@ -213,6 +228,7 @@ export default function MainPage() {
       }
 
       if (message.cmd == "CALIBRATION_FINISHED") {
+        calibrationFinishedSound();
         if (message.success) {
           setCalibrationError("");
         } else {

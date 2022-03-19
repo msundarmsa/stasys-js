@@ -1,8 +1,16 @@
 module.exports = [
   {
+    test: /\.(mp3)$/i,
+    use: [
+      {
+        loader: 'file-loader',
+      },
+    ],
+  },
+  {
     test: /\.worker\.js$/,
-    use: { 
-      loader: 'worker-loader' 
+    use: {
+      loader: 'worker-loader'
     }
   },
   // Add support for native node modules
