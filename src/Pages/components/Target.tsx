@@ -61,12 +61,24 @@ export const Target = ({
   newBefore,
   newAfter,
   canvasRef,
+  handleFineAdjustmentStart,
+  handleFineAdjustmentMove,
+  handleFineAdjustmentEnd,
+  fineAdjustment,
+  fineAdjustmentStart,
+  showAdjustment,
 }: {
   shots: Shot[];
   shotPoint: [number, number] | undefined;
   newBefore: [number, number] | undefined;
   newAfter: [number, number] | undefined;
   canvasRef: React.RefObject<HTMLCanvasElement>;
+  handleFineAdjustmentStart: (e: React.MouseEvent<SVGCircleElement>) => void;
+  handleFineAdjustmentMove: (e: React.MouseEvent<SVGSVGElement>) => void;
+  handleFineAdjustmentEnd: (e: React.MouseEvent<SVGSVGElement>) => void;
+  fineAdjustment: number[];
+  fineAdjustmentStart: number[];
+  showAdjustment: boolean;
 }) => {
   const [prevBefore, setPrevBefore] = useState<[number, number]>();
   const [prevAfter, setPrevAfter] = useState<[number, number]>();
@@ -173,6 +185,8 @@ export const Target = ({
             width: "100%",
             aspectRatio: "1/1"
           }}
+          onMouseMove={handleFineAdjustmentMove}
+          onMouseUp={handleFineAdjustmentEnd}
         >
           {shots.map((shot, _) => {
             return (
@@ -183,6 +197,7 @@ export const Target = ({
                 r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
                 stroke="#ffffff"
                 strokeWidth={3}
+                onMouseDown={handleFineAdjustmentStart}
               />
             );
           })}
@@ -194,8 +209,35 @@ export const Target = ({
               r={`${(PELLET_SIZE / TARGET_SIZE) * 100}%`}
               stroke="#ffffff"
               strokeWidth={3}
+              onMouseDown={handleFineAdjustmentStart}
             />
           ) : null}
+          <defs>
+            <marker id="arrowhead" viewBox="0 0 10 10"
+                  refX="10" refY="5"
+                  markerUnits="strokeWidth"
+                  markerWidth="10" markerHeight="10"
+                  orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#fff"/>
+            </marker>
+          </defs>
+          { showAdjustment ? (
+              <circle
+                cx={fineAdjustment[0]}
+                cy={fineAdjustment[1]}
+                fill="#00000000"
+                r={`${(PELLET_SIZE / TARGET_SIZE) * 100 + 0.2}%`}
+                stroke="#ffffff"
+                strokeWidth={5}
+                strokeDasharray="10"
+              /> )  :
+              null
+          }
+          { showAdjustment ? (
+              <line x1={fineAdjustmentStart[0]} y1={fineAdjustmentStart[1]} x2={fineAdjustment[0]} y2={fineAdjustment[1]} stroke="#fff"
+              stroke-width="4" marker-end="url(#arrowhead)" /> )  :
+              null
+          }
         </svg>
         <svg style={{ height: "100%", width: "100%", aspectRatio: "1/1" }}>
           {circles.map((circle, _) => {

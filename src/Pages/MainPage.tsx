@@ -19,7 +19,7 @@ import ScoreStatCard from "./components/ScoreStatCard";
 import { Target, ZoomedTarget } from "./components/Target";
 import ShotTable from "./components/ShotTable";
 import LineChart from "./components/LineChart";
-import { genRandomShots, Shot, TracePoint, updateShot } from "../ShotUtils";
+import { genRandomShots, Shot, TracePoint, updateShot, TARGET_SIZE } from "../ShotUtils";
 // eslint-disable-next-line import/no-unresolved
 import Worker from "worker-loader!./components/Worker";
 import electron from "../ipc";
@@ -92,6 +92,56 @@ export default function MainPage() {
   const [micThresh, setMicThresh] = useState(0.7);
 
   const [calibrationFinishedSound] = useSound(doneSound);
+
+  const incrFineAdjust = (x: number, y: number) => {
+      // increment fine adjust
+      electron.ipcRenderer.sendMsgOnChannel("camera-render-channel",
+        { cmd: "INCR_FINE_ADJUST", fineAdjust: {x: x, y: y} });
+  }
+
+  const [fineAdjustment, setFineAdjustment] = useState<number[]>([-1, -1]);
+  const [fineAdjustmentStarted, setFineAdjustmentStarted] = useState(false);
+  const [fineAdjustmentStart, setFineAdjustmentStart] = useState<number[]>([-1, -1]);
+  const [showAdjustment, setShowAdjustment] = useState(false);
+
+  const handleFineAdjustmentStart = (e: React.MouseEvent<SVGCircleElement>) => {
+    if (calibrateStarted) {
+      showToast("error", "Please wait for calibration to finish or stop calibration. Before adjusting shot.");
+      return;
+    }
+    if (shootStarted) {
+      showToast("error", "Please wait for shooting to finish or stop shooting. Before adjusting shot.");
+      return;
+    }
+
+    setShowAdjustment(true);
+    setFineAdjustment([e.currentTarget.cx.baseVal.value, e.currentTarget.cy.baseVal.value]);
+    setFineAdjustmentStart([e.currentTarget.cx.baseVal.value, e.currentTarget.cy.baseVal.value]);
+    setFineAdjustmentStarted(true);
+  };
+
+  const handleFineAdjustmentMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (fineAdjustmentStarted) {
+      setFineAdjustment([e.nativeEvent.offsetX, e.nativeEvent.offsetY]);
+    }
+  };
+
+  const handleFineAdjustmentEnd = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (fineAdjustmentStarted) {
+      setFineAdjustment([e.nativeEvent.offsetX, e.nativeEvent.offsetY]);
+      setFineAdjustmentStarted(false);
+
+      const distX = e.nativeEvent.offsetX - fineAdjustmentStart[0];
+      const distY = fineAdjustmentStart[1] - e.nativeEvent.offsetY;
+
+      if (canvasRef.current) {
+        incrFineAdjust(
+          distX / canvasRef.current?.width * TARGET_SIZE,
+          distY / canvasRef.current?.height * TARGET_SIZE
+        );
+      }
+    }
+  };
 
   const style = {
     position: "absolute",
@@ -436,6 +486,8 @@ export default function MainPage() {
       return;
     }
 
+    setShowAdjustment(false);
+
     if (calibrateStarted) {
       stopWebcam();
       stopMic();
@@ -458,6 +510,8 @@ export default function MainPage() {
       showToast("error", "Please wait for calibration to finish");
       return;
     }
+
+    setShowAdjustment(false);
 
     if (shootStarted) {
       stopWebcam();
@@ -567,6 +621,12 @@ export default function MainPage() {
               newBefore={beforeTrace}
               newAfter={afterTrace}
               canvasRef={canvasRef}
+              handleFineAdjustmentStart={handleFineAdjustmentStart}
+              handleFineAdjustmentMove={handleFineAdjustmentMove}
+              handleFineAdjustmentEnd={handleFineAdjustmentEnd}
+              fineAdjustment={fineAdjustment}
+              fineAdjustmentStart={fineAdjustmentStart}
+              showAdjustment={showAdjustment}
             />
           </div>
           <div style={{ flex: "10%", display: "flex" }}>

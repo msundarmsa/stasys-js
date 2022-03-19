@@ -98,7 +98,7 @@ process.on('message', (message) => {
       log(`Testing video: ${cameraId}`);
     }
 
-    log(`mode: ${mode}, threshs: ${threshs}, upDown: ${upDown}, RATIO1: ${RATIO1}, calibratePoint: {x: ${calibratePoint.x}, y: ${calibratePoint.y}, r: ${calibratePoint.r}}, fineAdjust: {x: ${fineAdjust.x}, y: ${fineAdjust.y}, r: ${fineAdjust.r}}`);
+    log(`mode: ${mode}, threshs: ${threshs}, upDown: ${upDown}, RATIO1: ${RATIO1}, calibratePoint: {x: ${calibratePoint.x}, y: ${calibratePoint.y}, r: ${calibratePoint.r}}, fineAdjust: {x: ${fineAdjust.x}, y: ${fineAdjust.y}}`);
 
     startCamera(cameraId, fps);
   } else if (message.cmd == "STOP_CAMERA") {
@@ -125,6 +125,9 @@ process.on('message', (message) => {
     RATIO1 = SEVEN_RING_SIZE / calibratePoint.r;
   } else if (message.cmd == "SET_FINE_ADJUST") {
     fineAdjust = message.fineAdjust;
+  } else if (message.cmd == "INCR_FINE_ADJUST") {
+    fineAdjust.x += message.fineAdjust.x;
+    fineAdjust.y += message.fineAdjust.y;
   } else if (message.cmd == "GET_PARAMS") {
     sendMessage({
       cmd: "PARAMS",
