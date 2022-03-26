@@ -105,9 +105,6 @@ process.on('message', (message) => {
     if (video) {
       video.release();
     }
-
-    resetState();
-    sendMessage({ cmd: "STOPPED_CAMERA" });
   } else if (message.cmd == "TRIGGER") {
     triggerTime = message.time;
   } else if (message.cmd == "SET_THRESHS") {
@@ -144,8 +141,8 @@ const startCamera = (cameraId, fps) => {
     video = new cv.VideoCapture(cameraId);
   } catch (error) {
     resetState();
-    log(`Could not open webcam ${cameraId}`);
-    sendMessage({ cmd: 'VIDEO_STOPPED', fps: 0 });
+    const fps = frameId / (Date.now() - startTime) * 1000;
+    sendMessage({ cmd: 'VIDEO_STOPPED', fps: fps });
     return;
   }
 
