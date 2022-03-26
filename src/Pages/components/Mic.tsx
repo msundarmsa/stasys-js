@@ -83,8 +83,6 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
     const source = context.createMediaStreamSource(stream);
     const analyser = context.createAnalyser();
     analyser.fftSize = 512;
-    analyser.minDecibels = -127;
-    analyser.maxDecibels = 0;
     analyser.smoothingTimeConstant = 0.4;
     source.connect(analyser);
 
@@ -110,11 +108,10 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
         analyser.getByteFrequencyData(volumes);
         let volumeSum = 0;
         for (let i = 0; i < volumes.length; i += 1) {
-          volumeSum += volumes[i];
+          volumeSum += volumes[i] / 255; // min: 0. max: 255
         }
 
-        // Value range: 127 = analyser.maxDecibels - analyser.minDecibels;
-        const newY = volumeSum / volumes.length / 127;
+        const newY = volumeSum / volumes.length;
 
         newData.push({ x: newX, y: newY });
         return newData;

@@ -441,8 +441,6 @@ export default function MainPage() {
     const source = audioContext.createMediaStreamSource(stream);
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 512;
-    analyser.minDecibels = -127;
-    analyser.maxDecibels = 0;
     analyser.smoothingTimeConstant = 0.4;
     source.connect(analyser);
 
@@ -456,12 +454,11 @@ export default function MainPage() {
       analyser.getByteFrequencyData(volumes);
       let volumeSum = 0;
       for (let i = 0; i < volumes.length; i += 1) {
-        volumeSum += volumes[i];
+        volumeSum += volumes[i] / 255; // min: 0. max: 255.
       }
       const currTime = Date.now();
 
-      // Value range: 127 = analyser.maxDecibels - analyser.minDecibels;
-      const volume = volumeSum / volumes.length / 127;
+      const volume = volumeSum / volumes.length;
       const triggerLocked =
         lastTrigger >= 0 && currTime - lastTrigger <= triggerLock;
       if (volume > micThresh && !triggerLocked) {
