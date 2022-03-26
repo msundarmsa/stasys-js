@@ -228,14 +228,14 @@ export const Target = ({
                 fill="#00000000"
                 r={`${(PELLET_SIZE / TARGET_SIZE) * 100 + 0.2}%`}
                 stroke="#ffffff"
-                strokeWidth={5}
-                strokeDasharray="10"
+                strokeWidth={2}
+                strokeDasharray="5"
               /> )  :
               null
           }
           { showAdjustment ? (
               <line x1={fineAdjustmentStart[0]} y1={fineAdjustmentStart[1]} x2={fineAdjustment[0]} y2={fineAdjustment[1]} stroke="#fff"
-              stroke-width="4" marker-end="url(#arrowhead)" /> )  :
+              stroke-width="2" marker-end="url(#arrowhead)" /> )  :
               null
           }
         </svg>
