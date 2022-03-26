@@ -78,6 +78,8 @@ export default function MainPage() {
   const [allShots, setAllShots] = useState<Shot[]>([]);
   const [shot, setShot] = useState<Shot>();
   const [shotPoint, setShotPoint] = useState<[number, number]>();
+  const [prevBefore, setPrevBefore] = useState<[number, number]>();
+  const [prevAfter, setPrevAfter] = useState<[number, number]>();
   const [beforeTrace, setBeforeTrace] = useState<[number, number]>();
   const [afterTrace, setAfterTrace] = useState<[number, number]>();
   const [data, setData] = useState<{ x: number; y: number }[][]>([]);
@@ -304,6 +306,9 @@ export default function MainPage() {
         );
       }
     }
+
+    setPrevBefore(undefined);
+    setPrevAfter(undefined);
   };
 
   const startShootWebcam = (testState?: {testShotPoint: [number, number], testShots: Shot[], testShotGroups: Shot[][], allTestShots: Shot[] }) => {
@@ -348,7 +353,6 @@ export default function MainPage() {
         }
       } else if (message.cmd == "SHOT_FINISHED") {
         const shotId = currAllShots.length > 0 ? currAllShots[0].id + 1 : 1;
-        console.log({ data: message, currShotPoint });
         if (currShotPoint) {
           const shot: Shot = {
             id: shotId,
@@ -407,7 +411,6 @@ export default function MainPage() {
             idx += 1;
           }
 
-          console.log({ xData, yData });
           setData([xData, yData]);
         }
       } else if (message.cmd == "VIDEO_STOPPED") {
@@ -577,14 +580,17 @@ export default function MainPage() {
             </Box>
           </Modal>
           <Button
-            color={calibrateStarted ? "info" : "inherit"}
+            color={"info"}
             onClick={calibrateClick}
+            variant={calibrateStarted ? "contained" : "outlined"}
+            style={{ marginRight: "10px" }}
           >
             {calibrateStarted ? "CALIBRATING" : "CALIBRATE"}
           </Button>
           <Button
-            color={shootStarted ? "info" : "inherit"}
+            color={"error"}
             onClick={shootClick}
+            variant={shootStarted ? "contained" : "outlined"}
           >
             {shootStarted ? "SHOOTING" : "SHOOT"}
           </Button>
@@ -610,7 +616,7 @@ export default function MainPage() {
           <div
             style={{
               flex: "90%",
-              border: "1px solid #D7EC58",
+              border: shootStarted ? "1px solid #7f2d2f" : calibrateStarted ? "1px solid #4d7191" : "1px solid #D7EC58",
               borderRadius: "25px",
               overflow: "hidden",
             }}
@@ -618,6 +624,10 @@ export default function MainPage() {
             <Target
               shots={shots}
               shotPoint={shotPoint}
+              prevBefore={prevBefore}
+              prevAfter={prevAfter}
+              setPrevBefore={setPrevBefore}
+              setPrevAfter={setPrevAfter}
               newBefore={beforeTrace}
               newAfter={afterTrace}
               canvasRef={canvasRef}

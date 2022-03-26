@@ -58,6 +58,10 @@ const circleNumbers = [
 export const Target = ({
   shots,
   shotPoint,
+  prevBefore,
+  prevAfter,
+  setPrevBefore,
+  setPrevAfter,
   newBefore,
   newAfter,
   canvasRef,
@@ -70,6 +74,10 @@ export const Target = ({
 }: {
   shots: Shot[];
   shotPoint: [number, number] | undefined;
+  prevBefore: [number, number] | undefined;
+  prevAfter: [number, number] | undefined;
+  setPrevBefore: (trace: [number, number] | undefined) => void;
+  setPrevAfter: (trace: [number, number] | undefined) => void;
   newBefore: [number, number] | undefined;
   newAfter: [number, number] | undefined;
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -80,9 +88,6 @@ export const Target = ({
   fineAdjustmentStart: number[];
   showAdjustment: boolean;
 }) => {
-  const [prevBefore, setPrevBefore] = useState<[number, number]>();
-  const [prevAfter, setPrevAfter] = useState<[number, number]>();
-
   const translateX = (x: number): number => {
     return ((x + TARGET_SIZE / 2) / TARGET_SIZE) * 100;
   };
