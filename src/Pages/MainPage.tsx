@@ -613,7 +613,7 @@ export default function MainPage() {
           <div
             style={{
               flex: "90%",
-              border: shootStarted ? "1px solid #7f2d2f" : calibrateStarted ? "1px solid #4d7191" : "1px solid #D7EC58",
+              border: shootStarted ? "1px solid #FF4242" : calibrateStarted ? "1px solid #51D6FF" : "1px solid #D7EC58",
               borderRadius: "25px",
               overflow: "hidden",
             }}
