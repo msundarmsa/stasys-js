@@ -119,7 +119,8 @@ process.on('message', (message) => {
     upDown = message.upDown;
   } else if (message.cmd == "SET_CALIBRATE_POINT") {
     calibratePoint = message.calibratePoint;
-    RATIO1 = SEVEN_RING_SIZE / calibratePoint.r;
+    // RATIO1 = SEVEN_RING_SIZE / calibratePoint.r;
+    RATIO1 = 170 / 254;
   } else if (message.cmd == "SET_FINE_ADJUST") {
     fineAdjust = message.fineAdjust;
   } else if (message.cmd == "INCR_FINE_ADJUST") {
@@ -225,7 +226,8 @@ const grabFrame = (frame) => {
           success: true,
         });
         calibratePoint = currCalibratePoint;
-        RATIO1 = SEVEN_RING_SIZE / currCalibratePoint.r;
+        // RATIO1 = SEVEN_RING_SIZE / currCalibratePoint.r;
+        RATIO1 = 170 / 254;
         log(calibratePoint);
       } else {
         sendMessage({
