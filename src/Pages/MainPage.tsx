@@ -414,7 +414,6 @@ export default function MainPage() {
           setData([xData, yData]);
         }
       } else if (message.cmd == "VIDEO_STOPPED") {
-        showToast("info", `Average FPS: ${message.fps}`);
         stopWebcam();
         stopMic();
         setShootStarted(false);
@@ -441,6 +440,8 @@ export default function MainPage() {
     const source = audioContext.createMediaStreamSource(stream);
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 512;
+    analyser.minDecibels = -127;
+    analyser.maxDecibels = 0;
     analyser.smoothingTimeConstant = 0.4;
     source.connect(analyser);
 
@@ -454,11 +455,12 @@ export default function MainPage() {
       analyser.getByteFrequencyData(volumes);
       let volumeSum = 0;
       for (let i = 0; i < volumes.length; i += 1) {
-        volumeSum += volumes[i] / 255; // min: 0. max: 255.
+        volumeSum += volumes[i];
       }
       const currTime = Date.now();
 
-      const volume = volumeSum / volumes.length;
+      // Value range: 127 = analyser.maxDecibels - analyser.minDecibels;
+      const volume = volumeSum / volumes.length / 127;
       const triggerLocked =
         lastTrigger >= 0 && currTime - lastTrigger <= triggerLock;
       if (volume > micThresh && !triggerLocked) {
@@ -572,6 +574,7 @@ export default function MainPage() {
                 setCameraId={setCameraId}
                 setMicId={setMicId}
                 setMicThresh={setMicThresh}
+                micThresh={micThresh}
                 cameraWorker={cameraWorker}
               />
             </Box>
@@ -585,7 +588,7 @@ export default function MainPage() {
             {calibrateStarted ? "CALIBRATING" : "CALIBRATE"}
           </Button>
           <Button
-            color={"error"}
+            color={"success"}
             onClick={shootClick}
             variant={shootStarted ? "contained" : "outlined"}
           >
@@ -613,7 +616,7 @@ export default function MainPage() {
           <div
             style={{
               flex: "90%",
-              border: shootStarted ? "1px solid #FF4242" : calibrateStarted ? "1px solid #51D6FF" : "1px solid #D7EC58",
+              border: shootStarted ? "1px solid #D7EC58" : calibrateStarted ? "1px solid #51D6FF" : "1px solid #FF4242",
               borderRadius: "25px",
               overflow: "hidden",
             }}

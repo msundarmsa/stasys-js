@@ -8,6 +8,7 @@ const SettingsPage = ({
   setCameraId,
   setMicId,
   setMicThresh,
+  micThresh,
   cameraWorker,
 }: IProps) => {
   return (
@@ -24,7 +25,7 @@ const SettingsPage = ({
         }}
       >
         <Box sx={{ width: "50%", p: 1 }}>
-          <Mic setMicId={setMicId} setMicThresh={setMicThresh} />
+          <Mic setMicId={setMicId} setMicThresh={setMicThresh} micThresh={micThresh} />
         </Box>
         <Box sx={{ width: "50%", p: 1 }}>
           <Webcam setCameraId={setCameraId} cameraWorker={cameraWorker} />
@@ -38,6 +39,7 @@ interface IProps {
   setCameraId: (id: number) => void;
   setMicId: (id: string) => void;
   setMicThresh: (thresh: number) => void;
+  micThresh: number;
   cameraWorker: Worker | null;
 }
 

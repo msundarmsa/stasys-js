@@ -10,7 +10,7 @@ import {
 import { useState, useEffect } from "react";
 import LineChart from "./LineChart";
 
-const Mic = ({ setMicId, setMicThresh }: IProps) => {
+const Mic = ({ setMicId, setMicThresh, micThresh }: IProps) => {
   const [devices, setDevices] = useState<MediaDeviceInfo[] | []>([]);
   // menu
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -23,7 +23,6 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
   const [data, setData] = useState<{ x: number; y: number }[]>([]);
   const [audioInterval, setAudioInterval] = useState<NodeJS.Timer>();
   const [audioContext, setAudioContext] = useState<AudioContext>();
-  const [refLevel, setRefLevel] = useState(0.7);
 
   const closeMics = () => {
     setAnchorEl(null);
@@ -83,6 +82,8 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
     const source = context.createMediaStreamSource(stream);
     const analyser = context.createAnalyser();
     analyser.fftSize = 512;
+    analyser.minDecibels = -127;
+    analyser.maxDecibels = 0;
     analyser.smoothingTimeConstant = 0.4;
     source.connect(analyser);
 
@@ -108,10 +109,11 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
         analyser.getByteFrequencyData(volumes);
         let volumeSum = 0;
         for (let i = 0; i < volumes.length; i += 1) {
-          volumeSum += volumes[i] / 255; // min: 0. max: 255
+          volumeSum += volumes[i];
         }
 
-        const newY = volumeSum / volumes.length;
+        // Value range: 127 = analyser.maxDecibels - analyser.minDecibels;
+        const newY = volumeSum / volumes.length / 127;
 
         newData.push({ x: newX, y: newY });
         return newData;
@@ -184,7 +186,7 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
       >
         <LineChart
           lines={data.length == 0 ? [] : [data]}
-          refLevel={refLevel}
+          refLevel={micThresh}
           name="micplot"
           aspectRatio="1280/720"
         />
@@ -194,13 +196,11 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
           Threshold
         </Typography>
         <Slider
-          value={refLevel}
+          value={micThresh}
           step={0.001}
           min={0}
           max={1}
           onChange={(_1, newLevel, _2) => {
-            // @ts-expect-error: expect error here due to possibility that newLevel be an array
-            setRefLevel(newLevel);
             // @ts-expect-error: expect error here due to possibility that newLevel be an array
             setMicThresh(newLevel);
           }}
@@ -213,6 +213,7 @@ const Mic = ({ setMicId, setMicThresh }: IProps) => {
 interface IProps {
   setMicId: (id: string) => void;
   setMicThresh: (thresh: number) => void;
+  micThresh: number;
 }
 
 export default Mic;

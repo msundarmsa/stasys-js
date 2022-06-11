@@ -88,7 +88,7 @@ process.on('message', (message) => {
     }
 
     mode = message.mode;
-    const fps = mode == "SHOOT" ? 200 : 30;
+    const fps = mode == "SHOOT" ? 300 : 30;
     let cameraId = message.cameraId;
 
     if ('test' in message && message.test) {
@@ -105,6 +105,11 @@ process.on('message', (message) => {
     if (video) {
       video.release();
     }
+
+    const fps = frameId / (Date.now() - startTime) * 1000;
+    resetState();
+    sendMessage({ cmd: 'STOPPED_CAMERA' });
+    console.log(`[CameraProcess] FPS: ${fps}`);
   } else if (message.cmd == "TRIGGER") {
     triggerTime = message.time;
   } else if (message.cmd == "SET_THRESHS") {
@@ -141,8 +146,8 @@ const startCamera = (cameraId, fps) => {
   try {
     video = new cv.VideoCapture(cameraId);
   } catch (error) {
-    resetState();
     const fps = frameId / (Date.now() - startTime) * 1000;
+    resetState();
     sendMessage({ cmd: 'VIDEO_STOPPED', fps: fps });
     return;
   }
@@ -435,6 +440,8 @@ const calibrate = () => {
   let calibratePoint = { x: 0, y: 0, r: -1, time: 0 };
   let bestMeanDist = -1;
   let points = [];
+  let maxDuration = beforeTrace[beforeTrace.length - 1].time - beforeTrace[0].time;
+  console.log(`[CameraProcess] Max Duration: ${maxDuration} ms`)
 
   for (let i = beforeTrace.length - 1; i >= 0; i--) {
     const currTP = beforeTrace[i];
@@ -442,7 +449,7 @@ const calibrate = () => {
       points.push(currTP);
     } else {
       const duration = points[0].time - currTP.time;
-      if (duration > 1033 && duration < 1066) {
+      if (duration > 1000 && duration < 1100) {
         // there has been 1s worth of data
 
         // calculate average position and radius of detected circle in points
