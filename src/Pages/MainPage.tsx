@@ -91,7 +91,7 @@ export default function MainPage() {
   // user options
   const [cameraId, setCameraId] = useState(-1);
   const [micId, setMicId] = useState("");
-  const [micThresh, setMicThresh] = useState(0.7);
+  const [micThresh, setMicThresh] = useState(0.2);
 
   const [calibrationFinishedSound] = useSound(doneSound);
 
@@ -290,6 +290,7 @@ export default function MainPage() {
         stopMic();
         setCalibrateStarted(false);
         handleCalibrationSBOpen();
+        electron.ipcRenderer.removeAllListeners("camera-render-channel");
       }
     });
   };
@@ -418,6 +419,7 @@ export default function MainPage() {
         stopMic();
         setShootStarted(false);
         clearTrace();
+        electron.ipcRenderer.removeAllListeners("camera-render-channel");
       }
     });
   };
