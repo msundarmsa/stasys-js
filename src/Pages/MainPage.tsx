@@ -415,11 +415,12 @@ export default function MainPage() {
           setData([xData, yData]);
         }
       } else if (message.cmd == "VIDEO_STOPPED") {
-        stopWebcam();
         stopMic();
         setShootStarted(false);
         clearTrace();
         electron.ipcRenderer.removeAllListeners("camera-render-channel");
+
+        showToast('info', `FPS: ${message.fps}`);
       }
     });
   };

@@ -88,7 +88,7 @@ process.on('message', (message) => {
     }
 
     mode = message.mode;
-    const fps = mode == "SHOOT" ? 250 : 30;
+    const fps = mode == "SHOOT" ? 300 : 30;
     let cameraId = message.cameraId;
 
     if ('test' in message && message.test) {
@@ -105,11 +105,6 @@ process.on('message', (message) => {
     if (video) {
       video.release();
     }
-
-    const fps = frameId / (Date.now() - startTime) * 1000;
-    resetState();
-    sendMessage({ cmd: 'STOPPED_CAMERA' });
-    console.log(`[CameraProcess] FPS: ${fps}`);
   } else if (message.cmd == "TRIGGER") {
     triggerTime = message.time;
   } else if (message.cmd == "SET_THRESHS") {
