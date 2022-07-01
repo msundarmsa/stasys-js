@@ -146,8 +146,8 @@ export default function MainPage() {
 
       if (canvasRef.current) {
         incrFineAdjust(
-          distX / canvasRef.current?.width * TARGET_SIZE,
-          distY / canvasRef.current?.height * TARGET_SIZE
+          2 * distX / canvasRef.current?.width * TARGET_SIZE,
+          2 * distY / canvasRef.current?.height * TARGET_SIZE
         );
       }
     }
