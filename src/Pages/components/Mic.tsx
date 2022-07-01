@@ -10,8 +10,7 @@ import {
 import { useState, useEffect } from "react";
 import LineChart from "./LineChart";
 
-const Mic = ({ setMicId, setMicThresh, micThresh }: IProps) => {
-  const [devices, setDevices] = useState<MediaDeviceInfo[] | []>([]);
+const Mic = ({ setMicId, setMicThresh, micThresh, mics }: IProps) => {
   // menu
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -28,19 +27,7 @@ const Mic = ({ setMicId, setMicThresh, micThresh }: IProps) => {
     setAnchorEl(null);
   };
 
-  async function getMics() {
-    const mydevices = await navigator.mediaDevices.enumerateDevices();
-    setDevices(
-      mydevices.filter(
-        (device) =>
-          device.kind === "audioinput" && !device.label.startsWith("Default")
-      )
-    );
-  }
-
   useEffect(() => {
-    getMics();
-
     return () => stopMic();
   }, []);
 
@@ -140,7 +127,7 @@ const Mic = ({ setMicId, setMicThresh, micThresh }: IProps) => {
           horizontal: "left",
         }}
       >
-        {devices.map((device) => (
+        {mics.map((device) => (
           <MenuItem key={device.label} onClick={() => selectMic(device)}>
             {device.label}
           </MenuItem>
@@ -214,6 +201,7 @@ interface IProps {
   setMicId: (id: string) => void;
   setMicThresh: (thresh: number) => void;
   micThresh: number;
+  mics: MediaDeviceInfo[];
 }
 
 export default Mic;

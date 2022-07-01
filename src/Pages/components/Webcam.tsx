@@ -14,7 +14,7 @@ import { useState, useRef, useEffect } from "react";
 import Worker from "worker-loader!./Worker";
 import electron from "../../ipc";
 
-const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
+const Webcam = ({ setCameraId, cameraWorker, webcams }: IProps) => {
   // menu
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -23,7 +23,6 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
   };
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [webcamStarted, setWebcamStarted] = useState(false);
   const [deviceLabel, setDeviceLabel] = useState("");
   const [threshs, setThreshs] = useState<number[]>([]);
@@ -35,14 +34,7 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
     setAnchorEl(null);
   };
 
-  async function getWebcams() {
-    const mydevices = await navigator.mediaDevices.enumerateDevices();
-    setDevices(mydevices.filter((device) => device.kind === "videoinput"));
-  }
-
   useEffect(() => {
-    getWebcams();
-
     // get current settings from camera worker
     if (!cameraWorker) {
       // TODO: display error message
@@ -86,14 +78,14 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
     }
 
     // update state
-    setCameraId(devices.indexOf(device));
+    setCameraId(webcams.indexOf(device));
     setDeviceLabel(device.label);
     setWebcamStarted(true);
 
     closeWebcams();
 
     // send start signal to worker process
-    const deviceIndex = devices.indexOf(device);
+    const deviceIndex = webcams.indexOf(device);
     cameraWorker.postMessage({
       cmd: "START_CAMERA",
       cameraId: deviceIndex,
@@ -176,7 +168,7 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
           horizontal: "left",
         }}
       >
-        {devices.map((device) => (
+        {webcams.map((device) => (
           <MenuItem key={device.label} onClick={() => selectWebcam(device)}>
             {device.label}
           </MenuItem>
@@ -287,6 +279,7 @@ const Webcam = ({ setCameraId, cameraWorker }: IProps) => {
 interface IProps {
   setCameraId: (id: number) => void;
   cameraWorker: Worker | null;
+  webcams: MediaDeviceInfo[];
 }
 
 export default Webcam;

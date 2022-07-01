@@ -37,6 +37,9 @@ const triggerLock = 5000; // trigger is locked for 5ms once triggered
 let testVidPath = "";
 let testTriggers: number[] = [];
 let testCalibratePoint: TracePoint = {x: 0, y: 0, r: 0, time: 0};
+let isMac = false;
+let isWindows = false;
+let isLinux = false;
 
 electron.ipcRenderer.sendMsg("GET_TEST_VID");
 electron.ipcRenderer.once("main-render-channel", (...args) => {
@@ -45,6 +48,9 @@ electron.ipcRenderer.once("main-render-channel", (...args) => {
   testVidPath = args[0][0] as unknown as string;
   testTriggers = args[0][1] as unknown as number[];
   testCalibratePoint = args[0][2] as unknown as TracePoint;
+  isMac = args[0][3] as unknown as boolean;
+  isWindows = args[0][4] as unknown as boolean;
+  isLinux = args[0][5] as unknown as boolean;
 });
 
 export default function MainPage() {
@@ -89,6 +95,8 @@ export default function MainPage() {
   const [shootStarted, setShootStarted] = useState(false);
 
   // user options
+  const [webcams, setWebcams] = useState<MediaDeviceInfo[]>([]);
+  const [mics, setMics] = useState<MediaDeviceInfo[]>([]);
   const [cameraId, setCameraId] = useState(-1);
   const [micId, setMicId] = useState("");
   const [micThresh, setMicThresh] = useState(0.2);
@@ -160,6 +168,9 @@ export default function MainPage() {
   useEffect(() => {
     // start camera worker
     cameraWorker = new Worker();
+
+    chooseDefaultCameraAndMic();
+
     return () => {
       cameraWorker?.terminate();
       electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", { cmd: "KILL" });
@@ -213,51 +224,66 @@ export default function MainPage() {
 
   async function chooseDefaultCameraAndMic() {
     const mydevices = await navigator.mediaDevices.enumerateDevices();
-    let cameraIdx = 0;
+
+    // get webcams
+    const webcams = mydevices.filter((device) => device.kind === "videoinput");
+    // dirty trick for windows
+    if (isWindows) {
+      webcams.reverse();
+    }
+
+    // get mics
+    const mics = mydevices.filter(
+      (device) =>
+        device.kind === "audioinput" && !device.label.startsWith("Default")
+    );
+
     const user_chose_video = cameraId != -1;
     const user_chose_audio = micId != "";
     let usbAudioExists = false;
     let usbVideoExists = false;
-    let firstCameraId = -1;
-    let firstMicId = "";
-    for (let i = 0; i < mydevices.length; i++) {
-      const is_video = mydevices[i].kind == "videoinput";
-      const is_audio = mydevices[i].kind == "audioinput";
-      const is_usb = mydevices[i].label.includes("USB");
-      if (is_video) {
-        if (is_usb && !user_chose_video) {
-          setCameraId(cameraIdx);
-          usbVideoExists = true;
-        } else if (!user_chose_video && firstCameraId < 0) {
-          firstCameraId = cameraIdx;
-        }
-        cameraIdx++;
-      } else if (is_audio) {
-        if (is_usb && !user_chose_audio) {
-          setMicId(mydevices[i].deviceId);
-          usbAudioExists = true;
-        } else if (!user_chose_audio && firstMicId == "") {
-          firstMicId = mydevices[i].deviceId;
-        }
+
+    // choose webcam with name "USB" if user has not selected video
+    for (let i = 0; i < webcams.length; i++) {
+      if (webcams[i].label.includes("USB") && !user_chose_video) {
+        setCameraId(i);
+        usbVideoExists = true;
       }
+    }
+
+    // choose mic with name "USB" if user has not selected audio
+    for (let i = 0; i < mics.length; i++) {
+      if (mics[i].label.includes("USB") && !user_chose_audio) {
+        setMicId(mics[i].deviceId);
+        usbAudioExists = true;
+      }
+    }
+
+    if (webcams.length == 0) {
+      showToast("error", "No webcams found!");
+      return;
+    }
+
+    if (mics.length == 0) {
+      showToast("error", "No mics found!");
+      return;
     }
 
     if (
       (!user_chose_video && !usbVideoExists) ||
       (!user_chose_audio && !usbAudioExists)
     ) {
-      setCameraId(firstCameraId);
-      setMicId(firstMicId);
+      setCameraId(0);
+      setMicId(mics[0].deviceId);
       showToast(
         "info",
         "Could not find USB camera/mic. Chosen first available camera/mic. If you would like to change this please go to settings dialog and manually select the camera and microphone."
       );
     }
-  }
 
-  useEffect(() => {
-    chooseDefaultCameraAndMic();
-  }, []);
+    setWebcams(webcams);
+    setMics(mics);
+  }
 
   const startCalibrateWebcam = () => {
     if (!cameraWorker) {
@@ -579,6 +605,8 @@ export default function MainPage() {
                 setMicThresh={setMicThresh}
                 micThresh={micThresh}
                 cameraWorker={cameraWorker}
+                webcams={webcams}
+                mics={mics}
               />
             </Box>
           </Modal>

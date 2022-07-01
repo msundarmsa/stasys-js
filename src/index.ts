@@ -19,10 +19,14 @@ const testCalibratePoint = {
   x: 530.0256890190974,
   y: 433.28644789997327,
 };
+const isMac = os.platform() === "darwin";
+const isWindows = os.platform() === "win32";
+const isLinux = os.platform() === "linux";
 
 // listen on channel for messages from render process
 ipcMain.once("main-render-channel", async (event) => {
-  const args = [testVidPath, testTriggers, testCalibratePoint];
+  const args = [testVidPath, testTriggers, testCalibratePoint, isMac, isWindows,
+    isLinux];
   console.log("Sending test args");
   console.log(args);
   event.sender.send('main-render-channel', args);
