@@ -496,9 +496,7 @@ export default function MainPage() {
         electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", { cmd: "TRIGGER", time: currTime });
         lastTrigger = currTime;
 
-        if (calibrateStarted) {
-          showToast('info', `Mic triggered at volume level > threshold: ${volume} > ${micThresh}`);
-        }
+        showToast('info', `Mic triggered at volume level > threshold: ${volume} > ${micThresh}`);
       }
     }, intervalMs);
   };
