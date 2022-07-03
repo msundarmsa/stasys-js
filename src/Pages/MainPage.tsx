@@ -306,16 +306,18 @@ export default function MainPage() {
       }
 
       if (message.cmd == "CALIBRATION_FINISHED") {
-        calibrationFinishedSound();
-        if (message.success) {
-          setCalibrationError("");
-        } else {
-          setCalibrationError(message.errorMsg);
-        }
+        setCalibrateStarted(false);
         stopWebcam();
         stopMic();
-        setCalibrateStarted(false);
-        handleCalibrationSBOpen();
+        if (calibrateStarted) {
+          calibrationFinishedSound();
+          if (message.success) {
+            setCalibrationError("");
+          } else {
+            setCalibrationError(message.errorMsg);
+          }
+          handleCalibrationSBOpen();
+        }
         electron.ipcRenderer.removeAllListeners("camera-render-channel");
       }
     });
@@ -446,7 +448,7 @@ export default function MainPage() {
         clearTrace();
         electron.ipcRenderer.removeAllListeners("camera-render-channel");
 
-        showToast('info', `FPS: ${message.fps}`);
+        console.log(`FPS: ${message.fps}`);
       }
     });
   };
@@ -495,8 +497,6 @@ export default function MainPage() {
       if (volume > micThresh && !triggerLocked) {
         electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", { cmd: "TRIGGER", time: currTime });
         lastTrigger = currTime;
-
-        showToast('info', `Mic triggered at volume level > threshold: ${volume} > ${micThresh}`);
       }
     }, intervalMs);
   };

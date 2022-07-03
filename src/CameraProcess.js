@@ -88,7 +88,7 @@ process.on('message', (message) => {
     }
 
     mode = message.mode;
-    const fps = mode == "SHOOT" ? 300 : 30;
+    const fps = mode == "SHOOT" ? 1000 : 30;
     let cameraId = message.cameraId;
 
     if ('test' in message && message.test) {
