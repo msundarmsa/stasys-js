@@ -447,8 +447,6 @@ export default function MainPage() {
         setShootStarted(false);
         clearTrace();
         electron.ipcRenderer.removeAllListeners("camera-render-channel");
-
-        console.log(`FPS: ${message.fps}`);
       }
     });
   };

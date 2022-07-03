@@ -105,6 +105,9 @@ process.on('message', (message) => {
     if (video) {
       video.release();
     }
+
+    resetState();
+    sendMessage({ cmd: 'STOPPED_CAMERA' });
   } else if (message.cmd == "TRIGGER") {
     triggerTime = message.time;
   } else if (message.cmd == "SET_THRESHS") {
