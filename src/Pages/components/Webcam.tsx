@@ -26,9 +26,7 @@ const Webcam = ({ setCameraId, cameraWorker, webcams }: IProps) => {
   const [webcamStarted, setWebcamStarted] = useState(false);
   const [deviceLabel, setDeviceLabel] = useState("");
   const [threshs, setThreshs] = useState<number[]>([]);
-  const [showCircle, setShowCircle] = useState(false);
-  const [showThreshs, setShowThreshs] = useState(false);
-  const [upDownDetection, setUpDownDetection] = useState(false);
+  const THRESH_DIST = 30; // fixed distance between lower and higher threshold
 
   const closeWebcams = () => {
     setAnchorEl(null);
@@ -47,10 +45,7 @@ const Webcam = ({ setCameraId, cameraWorker, webcams }: IProps) => {
         return;
       }
 
-      setShowCircle(event.data.showCircle);
-      setShowThreshs(event.data.showThreshs);
       setThreshs(event.data.threshs);
-      setUpDownDetection(event.data.upDown);
     };
 
     return () => stopWebcam();
@@ -113,42 +108,23 @@ const Webcam = ({ setCameraId, cameraWorker, webcams }: IProps) => {
       return;
     }
 
+    if (newThreshs[1] - newThreshs[0] != THRESH_DIST) {
+      // ensure distance between thresholds is fixed
+      if (newThreshs[0] == threshs[0]) {
+        // upper bound changed
+        threshsChanged([newThreshs[1] - THRESH_DIST, newThreshs[1]]);
+        return;
+      } else {
+        // bound changed
+        threshsChanged([newThreshs[0], newThreshs[0] + THRESH_DIST]);
+        return;
+      }
+    }
+
     const data = { cmd: "SET_THRESHS", threshs: newThreshs };
     cameraWorker.postMessage(data);
     electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", data);
     setThreshs(newThreshs);
-  };
-
-  const showThreshsChanged = (show: boolean) => {
-    if (!cameraWorker) {
-      // TODO: display error message
-      return;
-    }
-
-    cameraWorker.postMessage({ cmd: "SET_SHOW_THRESHS", showThreshs: show });
-    setShowThreshs(show);
-  };
-
-  const showCircleChanged = (show: boolean) => {
-    if (!cameraWorker) {
-      // TODO: display error message
-      return;
-    }
-
-    cameraWorker.postMessage({ cmd: "SET_SHOW_CIRCLE", showCircle: show });
-    setShowCircle(show);
-  };
-
-  const upDownDetectionChanged = (upDown: boolean) => {
-    if (!cameraWorker) {
-      // TODO: display error message
-      return;
-    }
-
-    const data = { cmd: "SET_UPDOWN", upDown: upDown };
-    cameraWorker.postMessage(data);
-    electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", data);
-    setUpDownDetection(upDown);
   };
 
   return (
@@ -232,46 +208,6 @@ const Webcam = ({ setCameraId, cameraWorker, webcams }: IProps) => {
           onChange={(_1, newThreshs, _2) => threshsChanged(newThreshs)}
         />
       </Stack>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          p: 1,
-          m: 1,
-          justifyContent: "center",
-        }}
-      >
-        <FormControlLabel
-          control={
-            <Checkbox
-              aria-label="showThresholds"
-              checked={showThreshs}
-              onChange={(_1, checked) => showThreshsChanged(checked)}
-            />
-          }
-          label="Show thresholds"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              aria-label="showCircle"
-              checked={showCircle}
-              onChange={(_1, checked) => showCircleChanged(checked)}
-            />
-          }
-          label="Show detected circle"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              aria-label="upDownDetection"
-              checked={upDownDetection}
-              onChange={(_1, checked) => upDownDetectionChanged(checked)}
-            />
-          }
-          label="Up/Down Detection"
-        />
-      </Box>
     </div>
   );
 };
