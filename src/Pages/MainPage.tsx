@@ -743,6 +743,7 @@ export default function MainPage() {
               xAxisLoc="middle"
               name="shotplot"
               zeroLine
+              hasLegend
             />
           </div>
         </div>

@@ -22,6 +22,7 @@ const LineChart = ({
   name,
   zeroLine,
   aspectRatio,
+  hasLegend,
 }: IProps) => {
   const svgElem = useRef<SVGSVGElement>(null);
   const [initialRender, setInitialRender] = useState(true);
@@ -80,32 +81,34 @@ const LineChart = ({
         .append("g")
         .attr("class", `line-chart-${name}-xaxis`);
 
-      // add legend
-      select(`.line-chart-${name}`)
-        .append("circle")
-        .attr("transform", `translate(${width - MARGINS.left / 2}, 20)`)
-        .attr("r", 6)
-        .style("fill", colors[0])
-      select(`.line-chart-${name}`)
-        .append("text")
-        .attr("transform", `translate(${width - MARGINS.left / 2 + 15}, 20)`)
-        .text("x")
-        .style("font-size", "15px")
-        .style("fill", "white")
-        .attr("alignment-baseline","middle")
+      if (hasLegend) {
+        // add legend
+        select(`.line-chart-${name}`)
+          .append("circle")
+          .attr("transform", `translate(${width - MARGINS.left / 2}, 20)`)
+          .attr("r", 6)
+          .style("fill", colors[0])
+        select(`.line-chart-${name}`)
+          .append("text")
+          .attr("transform", `translate(${width - MARGINS.left / 2 + 15}, 20)`)
+          .text("x")
+          .style("font-size", "15px")
+          .style("fill", "white")
+          .attr("alignment-baseline","middle")
 
-      select(`.line-chart-${name}`)
-        .append("circle")
-        .attr("transform", `translate(${width - MARGINS.left / 2}, 40)`)
-        .attr("r", 6)
-        .style("fill", colors[1])
-      select(`.line-chart-${name}`)
-        .append("text")
-        .attr("transform", `translate(${width - MARGINS.left / 2 + 15}, 40)`)
-        .text("y")
-        .style("font-size", "15px")
-        .style("fill", "white")
-        .attr("alignment-baseline","middle")
+        select(`.line-chart-${name}`)
+          .append("circle")
+          .attr("transform", `translate(${width - MARGINS.left / 2}, 40)`)
+          .attr("r", 6)
+          .style("fill", colors[1])
+        select(`.line-chart-${name}`)
+          .append("text")
+          .attr("transform", `translate(${width - MARGINS.left / 2 + 15}, 40)`)
+          .text("y")
+          .style("font-size", "15px")
+          .style("fill", "white")
+          .attr("alignment-baseline","middle")
+      }
 
       setInitialRender(false);
     }
@@ -227,6 +230,7 @@ interface IProps {
   name: string;
   zeroLine?: boolean;
   aspectRatio?: string;
+  hasLegend?: boolean;
 }
 
 export default LineChart;
