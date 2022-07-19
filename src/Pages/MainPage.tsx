@@ -594,7 +594,6 @@ export default function MainPage() {
           </IconButton>
           <Modal
             open={settingsPageOpen}
-            onClose={handleSettingsPageClose}
             aria-labelledby="modal-modal-title"
             aria-describedby="modal-modal-description"
           >
@@ -607,6 +606,7 @@ export default function MainPage() {
                 cameraWorker={cameraWorker}
                 webcams={webcams}
                 mics={mics}
+                handleClose={handleSettingsPageClose}
               />
             </Box>
           </Modal>

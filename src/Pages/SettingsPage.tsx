@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import Webcam from "./components/Webcam";
 import Mic from "./components/Mic";
 // eslint-disable-next-line import/no-unresolved
@@ -11,7 +11,8 @@ const SettingsPage = ({
   micThresh,
   cameraWorker,
   webcams,
-  mics
+  mics,
+  handleClose
 }: IProps) => {
   return (
     <div>
@@ -33,6 +34,11 @@ const SettingsPage = ({
           <Webcam setCameraId={setCameraId} cameraWorker={cameraWorker} webcams={webcams} />
         </Box>
       </Box>
+      <Box textAlign='center'>
+        <Button variant='contained' color='secondary' onClick={handleClose}>
+          Save & Close
+        </Button>
+      </Box>
     </div>
   );
 };
@@ -45,6 +51,7 @@ interface IProps {
   cameraWorker: Worker | null;
   webcams: MediaDeviceInfo[];
   mics: MediaDeviceInfo[];
+  handleClose: () => void;
 }
 
 export default SettingsPage;
