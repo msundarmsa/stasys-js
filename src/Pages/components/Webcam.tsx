@@ -124,6 +124,7 @@ const Webcam = ({ setCameraId, cameraWorker, webcams }: IProps) => {
     const data = { cmd: "SET_THRESHS", threshs: newThreshs };
     cameraWorker.postMessage(data);
     electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", data);
+    electron.ipcRenderer.sendMsgOnChannel("main-render-channel", ["SET_CAMERA_THRESHS", newThreshs]);
     setThreshs(newThreshs);
   };
 

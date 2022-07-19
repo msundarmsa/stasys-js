@@ -41,23 +41,16 @@ let isMac = false;
 let isWindows = false;
 let isLinux = false;
 
-electron.ipcRenderer.sendMsg("GET_TEST_VID");
-electron.ipcRenderer.once("main-render-channel", (...args) => {
-  console.log("Received test args");
-  console.log(args);
-  testVidPath = args[0][0] as unknown as string;
-  testTriggers = args[0][1] as unknown as number[];
-  testCalibratePoint = args[0][2] as unknown as TracePoint;
-  isMac = args[0][3] as unknown as boolean;
-  isWindows = args[0][4] as unknown as boolean;
-  isLinux = args[0][5] as unknown as boolean;
-});
-
 export default function MainPage() {
   // settings modal
   const [settingsPageOpen, setSettingsPageOpen] = useState(false);
   const handleSettingsPageOpen = () => setSettingsPageOpen(true);
-  const handleSettingsPageClose = () => setSettingsPageOpen(false);
+  const handleSettingsPageClose = () => {
+    setSettingsPageOpen(false);
+    electron.ipcRenderer.sendMsgOnChannel("main-render-channel", ["SET_CAMERA_ID", cameraId]);
+    electron.ipcRenderer.sendMsgOnChannel("main-render-channel", ["SET_MIC_ID", micId]);
+    electron.ipcRenderer.sendMsgOnChannel("main-render-channel", ["SET_MIC_THRESH", micThresh]);
+  }
 
   // calibration snack bar
   const [calibrationSBOpen, setCalibrationSBOpen] = useState(false);
@@ -170,6 +163,27 @@ export default function MainPage() {
     cameraWorker = new Worker();
 
     chooseDefaultCameraAndMic();
+
+    // get initial args from main process
+    electron.ipcRenderer.sendMsgOnChannel("main-render-channel", ["GET_INITAL_ARGS"]);
+    electron.ipcRenderer.once("main-render-channel", (...args) => {
+      console.log("Received test args");
+      console.log(args);
+      testVidPath = args[0][0] as unknown as string;
+      testTriggers = args[0][1] as unknown as number[];
+      testCalibratePoint = args[0][2] as unknown as TracePoint;
+      isMac = args[0][3] as unknown as boolean;
+      isWindows = args[0][4] as unknown as boolean;
+      isLinux = args[0][5] as unknown as boolean;
+
+      const settings = args[0][6] as unknown as { cameraId: number, micId: string, micThresh: number, cameraThreshs: [number, number] };
+      setCameraId(settings.cameraId)
+      setMicId(settings.micId)
+      setMicThresh(settings.micThresh);
+      const data = { cmd: "SET_THRESHS", threshs: settings.cameraThreshs };
+      cameraWorker?.postMessage(data);
+      electron.ipcRenderer.sendMsgOnChannel("camera-render-channel", data);
+    });
 
     return () => {
       cameraWorker?.terminate();
