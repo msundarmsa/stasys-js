@@ -306,9 +306,6 @@ export default function MainPage() {
       }
 
       if (message.cmd == "CALIBRATION_FINISHED") {
-        setCalibrateStarted(false);
-        stopWebcam();
-        stopMic();
         if (calibrateStarted) {
           calibrationFinishedSound();
           if (message.success) {
@@ -318,6 +315,9 @@ export default function MainPage() {
           }
           handleCalibrationSBOpen();
         }
+        setCalibrateStarted(false);
+        stopWebcam();
+        stopMic();
         electron.ipcRenderer.removeAllListeners("camera-render-channel");
       }
     });
