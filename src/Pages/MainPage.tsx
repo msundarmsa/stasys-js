@@ -320,15 +320,13 @@ export default function MainPage() {
       }
 
       if (message.cmd == "CALIBRATION_FINISHED") {
-        if (calibrateStarted) {
-          calibrationFinishedSound();
-          if (message.success) {
-            setCalibrationError("");
-          } else {
-            setCalibrationError(message.errorMsg);
-          }
-          handleCalibrationSBOpen();
+        calibrationFinishedSound();
+        if (message.success) {
+          setCalibrationError("");
+        } else {
+          setCalibrationError(message.errorMsg);
         }
+        handleCalibrationSBOpen();
         setCalibrateStarted(false);
         stopWebcam();
         stopMic();
