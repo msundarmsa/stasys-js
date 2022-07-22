@@ -593,9 +593,6 @@ export default function MainPage() {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             STASYS
           </Typography>
-          <Button color="secondary" onClick={handleTest}>
-            TEST
-          </Button>
           <IconButton
             size="large"
             edge="start"
