@@ -681,19 +681,19 @@ export default function MainPage() {
           </div>
           <div style={{ flex: "10%", display: "flex" }}>
             <ScoreStatCard
-              scoreStatType="STABLITITY"
+              scoreStatType="STABILITY"
               scoreStat={shot ? shot.stab : 0}
               dp={0}
               suffix="%"
             />
             <ScoreStatCard
-              scoreStatType="DESC"
+              scoreStatType="DESCENT TIME"
               scoreStat={shot ? shot.desc : 0}
               dp={1}
               suffix="s"
             />
             <ScoreStatCard
-              scoreStatType="AIM"
+              scoreStatType="AIM TIME"
               scoreStat={shot ? shot.aim : 0}
               dp={1}
               suffix="s"
